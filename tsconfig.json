@@ -1,0 +1,43 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "jsx": "react",
+    "baseUrl": "./src",
+    "paths": {
+      "@components/*": [
+        "components/*"
+      ],
+      "@screens/*": [
+        "screens/*"
+      ],
+      "@store/*": [
+        "stores/*"
+      ],
+      "@services/*": [
+        "services/*"
+      ],
+      "@env/*": [
+        "env/*"
+      ],
+      "@utils/*": [
+        "utils/*"
+      ],
+      "@hooks/*": [
+        "hooks/*"
+      ],
+      "@interfaces/*": [
+        "interfaces/*"
+      ]
+    },
+    "typeRoots": [
+      "./node_modules/@types",
+      "./@types"
+    ]
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ]
+}
