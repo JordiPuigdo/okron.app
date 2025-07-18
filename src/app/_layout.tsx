@@ -1,14 +1,20 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "@store/authStore";
 import { router, Stack } from "expo-router";
-import React from "react";
+import React, {useEffect} from "react";
 import { StatusBar, TouchableOpacity, View } from "react-native";
 import { colors } from "styles/colors";
 
 import { theme } from "styles/theme";
+import {configService} from "@services/configService";
 
 export default function RootLayout() {
   const { logout } = useAuthStore();
+
+    useEffect(() => {
+        configService.loadConfig();
+    }, []);
+
   return (
     <>
       <StatusBar

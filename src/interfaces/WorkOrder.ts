@@ -96,6 +96,7 @@ export enum StateWorkOrder {
   PendingToValidate,
   Open,
   Closed,
+  NotFinished
 }
 
 export interface CreateWorkOrderRequest {
@@ -123,6 +124,8 @@ export interface AddCommentToWorkOrderRequest {
   comment: string;
   operatorId: string;
   workOrderId: string;
+  type: WorkOrderCommentType;
+  files?: File[];
 }
 
 export interface WorkOrderComment {
@@ -130,6 +133,12 @@ export interface WorkOrderComment {
   creationDate: string;
   comment: string;
   operator: Operator;
+}
+
+export enum WorkOrderCommentType {
+  Internal,
+  External,
+  NotFinished
 }
 
 export interface SaveInspectionResultPointRequest {
