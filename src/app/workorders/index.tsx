@@ -79,16 +79,13 @@ export default function workOrders() {
     }, [authStore.factoryWorker])
   );
 
+  const validStates = [StateWorkOrder.Finished, StateWorkOrder.NotFinished];
   const filteredWorkOrders = useMemo(() => {
     let result = workOrders;
     if (showFinishedOnly) {
-      result = result.filter(
-        (wo) => wo.stateWorkOrder === StateWorkOrder.Finished
-      );
+      result = result.filter((wo) => validStates.includes(wo.stateWorkOrder));
     } else {
-      result = result.filter(
-        (wo) => wo.stateWorkOrder !== StateWorkOrder.Finished
-      );
+      result = result.filter((wo) => !validStates.includes(wo.stateWorkOrder));
     }
 
     const query = searchQuery.toLowerCase().trim();

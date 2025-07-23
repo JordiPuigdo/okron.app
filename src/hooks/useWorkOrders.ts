@@ -126,7 +126,6 @@ const addWorkOrderOperatorTimes = async (
 const updateStateWorkOrder = async (
   data: UpdateStateWorkOrder[]
 ): Promise<boolean> => {
-  setIsLoading(true);
   try {
     const response = await workOrderService.updateStateWorkOrder(data);
     return response!;
@@ -134,7 +133,18 @@ const updateStateWorkOrder = async (
     console.error("Error updating work order state:", error);
     throw error;
   } finally {
-    setIsLoading(false);
+  }
+};
+
+const updateWorkOrder = async (
+  data: CreateWorkOrderRequest
+): Promise<boolean> => {
+  try {
+    const response = await workOrderService.updateWorkOrder(data);
+    return response!;
+  } catch (error) {
+    console.error("Error updating work order:", error);
+    throw error;
   }
 };
 
@@ -157,6 +167,7 @@ export const useWorkOrders = () => {
     updateWorkOrderOperatorTimes,
     addWorkOrderOperatorTimes,
     updateStateWorkOrder,
+    updateWorkOrder,
     isLoading,
   };
 };

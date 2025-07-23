@@ -92,13 +92,24 @@ class WorkOrderService {
     addCommentToWorkOrder: AddCommentToWorkOrderRequest
   ): Promise<WorkOrderComment> {
     try {
+      const formData = new FormData();
+      formData.append("comment", addCommentToWorkOrder.comment);
+      formData.append("operatorId", addCommentToWorkOrder.operatorId);
+      formData.append("workOrderId", addCommentToWorkOrder.workOrderId);
+      formData.append("type", addCommentToWorkOrder.type.toString());
+      addCommentToWorkOrder.files?.forEach((file) => {
+        if (file.uri && file.name && file.type) {
+          formData.append("Files", {
+            uri: file.uri,
+            name: file.name,
+            type: file.type,
+          } as any);
+        }
+      });
       const url = `${this.API}AddCommentToWorkOrder`;
       const response = await fetch(url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(addCommentToWorkOrder),
+        body: formData,
       });
       if (!response.ok) {
         throw new Error("Failed to fetch addCommentToWorkOrder");
@@ -129,9 +140,6 @@ class WorkOrderService {
 
       if (!response.ok) {
         throw new Error("Failed to fetch WorkOrders-machines");
-      }
-      if (response.status === 204) {
-        return [];
       }
       return response.json();
     } catch (error) {
@@ -208,6 +216,34 @@ class WorkOrderService {
         throw new Error("Failed to update WorkOrder");
       }
       return true;
+    } catch (error) {
+      console.error("Error updating WorkOrder:", error);
+      throw error;
+    }
+  }
+
+  async updateWorkOrder(
+    updateWorkOrder: CreateWorkOrderRequest
+  ): Promise<boolean> {
+    try {
+      const url = `${this.API}workorder`;
+      const response = await fetch(url, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updateWorkOrder),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update WorkOrder");
+      }
+
+      if (response.status === 204) {
+        return true;
+      }
+
+      return response.json();
     } catch (error) {
       console.error("Error updating WorkOrder:", error);
       throw error;

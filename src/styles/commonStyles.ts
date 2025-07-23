@@ -677,8 +677,8 @@ export const commonStyles = StyleSheet.create({
     height: 100,
     marginBottom: 12,
   },
-  previewRow: { marginVertical: 12, },
-  previewBox: { marginRight: 10, marginTop:10, position: "relative" },
+  previewRow: { marginVertical: 12 },
+  previewBox: { marginRight: 10, marginTop: 10, position: "relative" },
   previewImage: { width: 120, height: 120, borderRadius: 5 },
   removeIcon: {
     position: "absolute",
@@ -695,12 +695,16 @@ export const commonStyles = StyleSheet.create({
   modalBtn: {
     flex: 1,
     padding: 14,
-    marginHorizontal:4,
+    marginHorizontal: 4,
     borderRadius: 5,
     alignItems: "center",
   },
   modalBtnText: {
     color: "#fff",
     fontSize: 16,
+  },
+  linkText: {
+    color: "#007BFF", // o cualquier azul que uses
+    textDecorationLine: "underline",
   },
 });

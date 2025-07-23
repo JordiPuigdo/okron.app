@@ -23,7 +23,7 @@ class ConfigService {
           throw new Error("Failed to fetch config");
         }
         const operators: Config =
-            response.status === 204 ? [] : await response.json();
+          response.status === 204 ? [] : await response.json();
         this.configData = operators;
         return operators;
       })();
@@ -35,11 +35,12 @@ class ConfigService {
    * Acceso sincrónico a los datos caché. Lanzará error si aún no están cargados.
    */
   getConfigSync(): Config {
-    if (!this.configData) {
+    /*if (!this.configData) {
       throw new Error(
           "Config not loaded yet. Ejecuta primero loadConfig() para inicializarla."
       );
     }
+  }*/
     return this.configData;
   }
 }

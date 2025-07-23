@@ -11,6 +11,7 @@ export function useOperators() {
   const fetchOperators = async () => {
     try {
       setLoading(true);
+
       const data = await operatorService.getOperators();
       setOperators(data);
     } catch (err) {

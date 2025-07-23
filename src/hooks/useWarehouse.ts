@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { WareHouseStockAvailability } from "@interfaces/SparePart";
 import WarehouseService from "@services/warehouseService";
@@ -12,17 +12,29 @@ export const useWareHouses = () => {
   const wareHouseService = new WarehouseService();
 
   const fetchStockAvailability = async () => {
+    let loadingTimeout: ReturnType<typeof setTimeout>;
+
     try {
-      setLoading(true);
+      loadingTimeout = setTimeout(() => setLoading(true), 200); // Evita parpadeos
       setError(null);
       const response = await wareHouseService.stockAvailability();
-      setStockAvailability(response);
-      return response;
+      const formattedResponse = response.map((item) => {
+        const [sparePartCode, ...nameParts] = item.sparePartName.split(" - ");
+        return {
+          sparePartId: item.sparePartId,
+          sparePartCode: sparePartCode.trim(),
+          sparePartName: nameParts.join(" - ").trim(),
+          warehouseStock: item.warehouseStock,
+        };
+      });
+      setStockAvailability(formattedResponse);
+      return formattedResponse;
     } catch (err) {
       console.error("Error fetching stock availability:", err);
       setError(err instanceof Error ? err : new Error("Unknown error"));
       throw err;
     } finally {
+      clearTimeout(loadingTimeout);
       setLoading(false);
     }
   };

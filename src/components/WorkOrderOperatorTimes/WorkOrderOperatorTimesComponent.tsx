@@ -3,16 +3,25 @@ import {
   AddWorkOrderOperatorTimes,
   StateWorkOrder,
   WorkOrderOperatorTimes,
+  WorkOrderTimeType,
 } from "@interfaces/WorkOrder";
 import { formatTimeSpan } from "@utils/workorderUtils";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
-import React, { useRef, useState } from "react";
-import { FlatList, Text, TouchableOpacity, View } from "react-native";
+import React, { useCallback, useRef, useState } from "react";
+import {
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import { ManualEntryModal } from "@components/workorder/ManualEntryModal";
 import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
+import { useOperators } from "@hooks/useOperator";
 import { useWorkOrders } from "@hooks/useWorkOrders";
+import { configService } from "@services/configService";
 import { useAuthStore } from "@store/authStore";
 import { theme } from "styles/theme";
 
@@ -23,6 +32,7 @@ interface Props {
   onCreate: (created: WorkOrderOperatorTimes) => void;
   onFinalize(operatorId: string): void;
   workOrderId: string;
+  workerId?: string;
 }
 
 export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
@@ -30,51 +40,66 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
   onCreate,
   onFinalize,
   workOrderId,
+  workerId = undefined,
 }) => {
+  const { updateStateWorkOrder } = useWorkOrders();
+  const { isCRM } = configService.getConfigSync();
+
+  const [timeType, setTimeType] = useState<WorkOrderTimeType>(
+    WorkOrderTimeType.Time
+  );
+  const currentWorkerId =
+    workerId ?? useAuthStore.getState().factoryWorker.id.toLocaleLowerCase();
+
   const [isRunning, setIsRunning] = useState<boolean>(
     workerTimes.find(
       (t) =>
         t.endTime == null &&
-        t.operator.id.toLocaleLowerCase() ==
-          useAuthStore.getState().factoryWorker.id.toLocaleLowerCase()
+        t.operator.id.toLocaleLowerCase() == currentWorkerId
     ) !== undefined
   );
 
-  /*const { updateWorkOrderOperatorTimes, addWorkOrderOperatorTimes } =
-    useWorkOrders();*/
+  const { updateWorkOrderOperatorTimes, addWorkOrderOperatorTimes } =
+    useWorkOrders();
+  const { operators } = useOperators();
 
-  const { updateStateWorkOrder } = useWorkOrders();
+  const safeUpdateState = useCallback(
+    async (state: StateWorkOrder) => {
+      try {
+        await updateStateWorkOrder([
+          {
+            workOrderId,
+            state,
+            operatorId: workerId ?? useAuthStore.getState().factoryWorker.id,
+          },
+        ]);
+      } catch (error) {
+        console.error("updateStateWorkOrder failed:", error);
+      }
+    },
+    [workOrderId]
+  );
 
   const updateState = async (state: StateWorkOrder) => {
-    const updated = workerTimes.map((t) => ({
-      ...t,
-      state,
-    }));
-
-    await updateStateWorkOrder([
-      {
-        workOrderId: workOrderId,
-        state,
-        operatorId: useAuthStore.getState().factoryWorker.id,
-      },
-    ]);
-
-    const newData: WorkOrderOperatorTimes = {
-      id: Math.random().toString(),
-      operator: {
-        id: useAuthStore.getState().factoryWorker.id,
-        name: useAuthStore.getState().factoryWorker.name,
-        code: "1",
-        priceHour: 0,
-        operatorType: OperatorType.Maintenance,
-        active: true,
-      },
-      totalTime: null,
-      endTime: null,
-      startTime: startTimeRef.current,
-    };
-
-    //  onCreate(newData);
+    safeUpdateState(state);
+    if (state == StateWorkOrder.OnGoing) {
+      const newData: WorkOrderOperatorTimes = {
+        id: Math.random().toString(),
+        operator: {
+          id: useAuthStore.getState().factoryWorker.id,
+          name: useAuthStore.getState().factoryWorker.name,
+          code: "1",
+          priceHour: 0,
+          operatorType: OperatorType.Maintenance,
+          active: true,
+        },
+        totalTime: null,
+        endTime: null,
+        startTime: startTimeRef.current,
+        type: timeType,
+      };
+      onCreate(newData);
+    }
   };
 
   const startTimeRef = useRef<Date | null>(null);
@@ -96,20 +121,21 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
         operatorType: OperatorType.Maintenance,
         active: true,
       },
+      type: timeType,
     };
-
-    const newData: AddWorkOrderOperatorTimes = {
+    console.log("Starting time tracking:", newRecord);
+    /*const newData: AddWorkOrderOperatorTimes = {
       WorkOrderId: workOrderId,
       startTime: startTimeRef.current,
       operatorId: useAuthStore.getState().factoryWorker.id,
       workOrderOperatorTimesId: newRecord.id,
-    };
+    };*/
 
     //const recordInserted = await addWorkOrderOperatorTimes(newData);
     updateState(StateWorkOrder.OnGoing);
 
     newRecord.id = Math.random().toString();
-    onCreate(newRecord);
+    //onCreate(newRecord);
   };
 
   const handleStop = () => {
@@ -133,23 +159,36 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
       time.totalTime = dayjs(time.endTime)
         .diff(dayjs(time.startTime))
         .toString();
-      /*updateWorkOrderOperatorTimes({
+      updateWorkOrderOperatorTimes({
         workOrderId: workOrderId,
         startTime: time.startTime,
         endTime: time.endTime,
         workOrderOperatorTimesId: time.id,
-      });*/
-      updateState(StateWorkOrder.Paused);
+      });
+      safeUpdateState(StateWorkOrder.Paused);
     }
   };
 
   const renderItem = ({ item }: { item: WorkOrderOperatorTimes }) => {
     return (
       <View style={theme.commonStyles.timeCard}>
-        <Text style={theme.commonStyles.operatorName}>
-          {item.operator.name}
-        </Text>
-
+        <View style={styles.itemHeader}>
+          <Text style={theme.commonStyles.operatorName}>
+            {item.operator.name}
+          </Text>
+          <MaterialIcons
+            name={
+              item.type === WorkOrderTimeType.Travel ? "directions-car" : "work"
+            }
+            size={20}
+            color={
+              item.type === WorkOrderTimeType.Travel
+                ? theme.colors.primary
+                : theme.colors.success
+            }
+            style={styles.typeIcon}
+          />
+        </View>
         <View style={theme.commonStyles.timeRow}>
           <View style={theme.commonStyles.timeColumn}>
             <Text style={theme.commonStyles.timeValue}>
@@ -205,22 +244,26 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
       endTime: end,
       totalTime: dayjs(start).diff(dayjs(end)).toString(),
       operator: {
-        id: useAuthStore.getState().factoryWorker.id,
-        name: useAuthStore.getState().factoryWorker.name,
+        id: workerId ?? useAuthStore.getState().factoryWorker.id,
+        name: workOrderId
+          ? operators.find((o) => o.id === workerId)?.name
+          : useAuthStore.getState().factoryWorker.name,
         code: "1",
         priceHour: 0,
         operatorType: OperatorType.Maintenance,
         active: true,
       },
+      type: timeType,
     };
     const newData: AddWorkOrderOperatorTimes = {
       WorkOrderId: workOrderId,
       startTime: start,
-      operatorId: useAuthStore.getState().factoryWorker.id,
+      operatorId: workerId ?? useAuthStore.getState().factoryWorker.id,
       workOrderOperatorTimesId: newRecord.id,
+      type: timeType,
     };
 
-    /*const recordInserted = await addWorkOrderOperatorTimes(newData);
+    const recordInserted = await addWorkOrderOperatorTimes(newData);
 
     newRecord.id = recordInserted.workOrderOperatorTimesId;
 
@@ -229,7 +272,7 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
       startTime: start,
       endTime: end,
       workOrderOperatorTimesId: newRecord.id,
-    });*/
+    });
 
     onCreate(newRecord);
     setIsRunning(false);
@@ -238,6 +281,48 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
   return (
     <View style={theme.commonStyles.timeTrackerContainer}>
       <View style={theme.commonStyles.timeTrackerHeader}>
+        {isCRM && (
+          <View style={styles.typeSelectorContainer}>
+            <TouchableOpacity
+              style={[
+                styles.typeButton,
+                timeType === WorkOrderTimeType.Time && styles.typeButtonActive,
+              ]}
+              onPress={() => setTimeType(WorkOrderTimeType.Time)}
+              disabled={isRunning}
+            >
+              <MaterialIcons
+                name="work"
+                size={24}
+                color={
+                  timeType === WorkOrderTimeType.Time
+                    ? theme.colors.white
+                    : theme.colors.textSecondary
+                }
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.typeButton,
+                timeType === WorkOrderTimeType.Travel &&
+                  styles.typeButtonActive,
+              ]}
+              onPress={() => setTimeType(WorkOrderTimeType.Travel)}
+              disabled={isRunning}
+            >
+              <MaterialIcons
+                name="directions-car"
+                size={24}
+                color={
+                  timeType === WorkOrderTimeType.Travel
+                    ? theme.colors.white
+                    : theme.colors.textSecondary
+                }
+              />
+            </TouchableOpacity>
+          </View>
+        )}
         <TouchableOpacity
           style={[
             theme.commonStyles.actionButton,
@@ -297,3 +382,42 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  typeSelectorContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 16,
+    gap: 8,
+  },
+  typeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
+  },
+  typeButtonActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  typeButtonText: {
+    marginLeft: 8,
+    color: theme.colors.textSecondary,
+  },
+  typeButtonTextActive: {
+    color: theme.colors.white,
+  },
+  itemHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  typeIcon: {
+    marginLeft: 8,
+  },
+});

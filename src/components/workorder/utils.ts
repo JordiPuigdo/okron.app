@@ -1,12 +1,18 @@
 import {
-  MaterialIcons,
+  Entypo,
   FontAwesome5,
   Ionicons,
-  Entypo,
+  MaterialIcons,
 } from "@expo/vector-icons";
+
 import React, { JSX } from "react";
 
-export type TabKey = "inspection" | "comments" | "spareParts" | "times";
+export type TabKey =
+  | "inspection"
+  | "comments"
+  | "spareParts"
+  | "times"
+  | "workOrder";
 
 export interface TabItem {
   key: TabKey;
@@ -19,6 +25,15 @@ export const TABS: TabItem[] = [
     key: "inspection",
     icon: React.createElement(MaterialIcons, {
       name: "assignment-turned-in",
+      size: 24,
+      color: "black",
+    }),
+    visible: true,
+  },
+  {
+    key: "workOrder",
+    icon: React.createElement(MaterialIcons, {
+      name: "assignment",
       size: 24,
       color: "black",
     }),

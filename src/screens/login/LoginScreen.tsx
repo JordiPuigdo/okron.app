@@ -10,7 +10,9 @@ import {
 } from "react-native";
 import { theme } from "styles/theme";
 
-const icon = require("../../../assets/logoPng.png");
+// const icon = require("../../../assets/logoPng.png");
+const url = process.env.EXPO_PUBLIC_LOGO;
+
 export const LoginScreen = () => {
   //const [isLoading, setIsLoading] = useState(false);
 
@@ -27,7 +29,7 @@ export const LoginScreen = () => {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={theme.commonStyles.screenContainer}>
           <Image
-            source={icon}
+            source={{ uri: url }}
             style={theme.commonStyles.logo}
             resizeMode="contain"
           />

@@ -1,9 +1,11 @@
 import { Asset } from "./Asset";
 import { BaseModel } from "./baseModel";
+import { CustomerWorkOrder } from "./Customer";
 import { Downtimes, DowntimesReasons } from "./Downtimes";
 import InspectionPoint from "./InspectionPoint";
 import Operator from "./Operator";
 import { Preventive } from "./Preventive";
+import { SparePart } from "./SparePart";
 import { UserType } from "./User";
 
 export interface WorkOrder extends BaseModel {
@@ -31,6 +33,8 @@ export interface WorkOrder extends BaseModel {
   originalWorkOrderId?: string;
   workOrderCreatedId?: string;
   visibleReport?: boolean;
+  customerWorkOrder?: CustomerWorkOrder;
+  refCustomerId?: string;
 }
 
 export enum WorkOrderType {
@@ -45,12 +49,15 @@ export interface WorkOrderComment {
   creationDate: string;
   comment: string;
   operator: Operator;
+  type: WorkOrderCommentType;
+  urls?: string[];
 }
 
 export interface WorkOrderSparePart {
   creationDate?: Date;
   id: string;
   quantity: number;
+  sparePart: SparePart;
   operator?: Operator;
   warehouseId: string;
   warehouse: string;
@@ -69,6 +76,7 @@ export interface WorkOrderOperatorTimes {
   endTime?: Date;
   totalTime?: string;
   operator: Operator;
+  type: WorkOrderTimeType;
 }
 
 export interface SearchWorkOrderFilters {
@@ -96,7 +104,7 @@ export enum StateWorkOrder {
   PendingToValidate,
   Open,
   Closed,
-  NotFinished
+  NotFinished,
 }
 
 export interface CreateWorkOrderRequest {
@@ -118,27 +126,27 @@ export interface CreateWorkOrderRequest {
   originalWorkOrderId?: string;
   originalWorkOrderCode?: string;
   workOrderCreatedId?: string;
-  VisibleReport?: boolean;
+  visibleReport?: boolean;
+  startTime?: Date;
 }
 export interface AddCommentToWorkOrderRequest {
   comment: string;
   operatorId: string;
   workOrderId: string;
   type: WorkOrderCommentType;
-  files?: File[];
+  files?: UploadableFile[];
 }
 
-export interface WorkOrderComment {
-  id?: string;
-  creationDate: string;
-  comment: string;
-  operator: Operator;
+export interface UploadableFile {
+  uri: string;
+  name: string;
+  type: string;
 }
 
 export enum WorkOrderCommentType {
   Internal,
   External,
-  NotFinished
+  NotFinished,
 }
 
 export interface SaveInspectionResultPointRequest {
@@ -165,6 +173,12 @@ export interface AddWorkOrderOperatorTimes {
   startTime: Date;
   operatorId: string;
   workOrderOperatorTimesId?: string;
+  type?: WorkOrderTimeType;
+}
+
+export enum WorkOrderTimeType {
+  Time,
+  Travel,
 }
 
 export interface UpdateStateWorkOrder {

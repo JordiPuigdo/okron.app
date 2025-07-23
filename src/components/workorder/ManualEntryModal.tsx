@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import { Modal, View, TouchableOpacity, StyleSheet, Text } from "react-native";
+import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
-import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
+import React, { useState } from "react";
+import { Modal, Text, TouchableOpacity, View } from "react-native";
 import { theme } from "styles/theme";
 
 interface Props {
@@ -41,39 +41,45 @@ export const ManualEntryModal: React.FC<Props> = ({
       setShowPicker({ type: null });
       return;
     }
+
     switch (showPicker.type) {
       case "startDate":
-        setStartDate(
-          new Date(
-            selectedDate.setHours(startDate.getHours(), startDate.getMinutes())
-          )
-        );
+        setStartDate((prev) => {
+          // Crear una NUEVA fecha combinando la fecha seleccionada con la hora actual
+          const newDate = new Date(selectedDate);
+          newDate.setHours(prev.getHours(), prev.getMinutes());
+          return newDate;
+        });
         break;
+
       case "startTime":
-        setStartDate(
-          new Date(
-            startDate.setHours(
-              selectedDate.getHours(),
-              selectedDate.getMinutes()
-            )
-          )
-        );
+        setStartDate((prev) => {
+          // Crear una NUEVA fecha combinando la fecha actual con la hora seleccionada
+          const newDate = new Date(prev);
+          newDate.setHours(selectedDate.getHours(), selectedDate.getMinutes());
+          return newDate;
+        });
         break;
+
       case "endDate":
-        setEndDate(
-          new Date(
-            selectedDate.setHours(endDate.getHours(), endDate.getMinutes())
-          )
-        );
+        setEndDate((prev) => {
+          // Crear una NUEVA fecha combinando la fecha seleccionada con la hora actual
+          const newDate = new Date(selectedDate);
+          newDate.setHours(prev.getHours(), prev.getMinutes());
+          return newDate;
+        });
         break;
+
       case "endTime":
-        setEndDate(
-          new Date(
-            endDate.setHours(selectedDate.getHours(), selectedDate.getMinutes())
-          )
-        );
+        setEndDate((prev) => {
+          // Crear una NUEVA fecha combinando la fecha actual con la hora seleccionada
+          const newDate = new Date(prev);
+          newDate.setHours(selectedDate.getHours(), selectedDate.getMinutes());
+          return newDate;
+        });
         break;
     }
+
     setShowPicker({ type: null });
   };
 

@@ -18,6 +18,8 @@ export const translateStateWorkOrder = (state: any): string => {
       return "Obert";
     case StateWorkOrder.Closed:
       return "Tancat";
+    case StateWorkOrder.NotFinished:
+      return "No Finalitzada";
     default:
       return "";
   }
