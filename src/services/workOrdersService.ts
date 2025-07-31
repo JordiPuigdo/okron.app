@@ -2,10 +2,12 @@ import {
   AddCommentToWorkOrderRequest,
   AddWorkOrderOperatorTimes,
   CreateWorkOrderRequest,
+  DeleteWorkOrderOperatorTimes,
   SaveInspectionResultPointRequest,
   SearchWorkOrderFilters,
   UpdateStateWorkOrder,
   UpdateWorkOrderOperatorTimes,
+  UpdateWorkOrderSign,
   WorkOrder,
   WorkOrderComment,
   WorkOrderType,
@@ -75,7 +77,7 @@ class WorkOrderService {
     }
   }
 
-  async createWorkOrder(WorkOrder: CreateWorkOrderRequest): Promise<void> {
+  async createWorkOrder(WorkOrder: CreateWorkOrderRequest): Promise<WorkOrder> {
     const response = await fetch(`${this.API}workorder`, {
       method: "POST",
       headers: {
@@ -86,6 +88,8 @@ class WorkOrderService {
     if (!response.ok) {
       throw new Error("Failed to create machine WorkOrder");
     }
+
+    return response.json();
   }
 
   async addCommentToWorkOrder(
@@ -246,6 +250,74 @@ class WorkOrderService {
       return response.json();
     } catch (error) {
       console.error("Error updating WorkOrder:", error);
+      throw error;
+    }
+  }
+
+  async updateWorkOrderSign(
+    updateWorkOrderSign: UpdateWorkOrderSign
+  ): Promise<boolean> {
+    try {
+      const url = `${this.API}workOrder/Sign`;
+      console.log(updateWorkOrderSign);
+      console.log(url);
+      const response = await fetch(url, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updateWorkOrderSign),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update WorkOrder");
+      }
+      return true;
+    } catch (error) {
+      console.error("Error updating WorkOrder:", error);
+      throw error;
+    }
+  }
+  async deleteWorkerTimes(
+    request: DeleteWorkOrderOperatorTimes
+  ): Promise<boolean> {
+    try {
+      const url = `${this.API}DeleteWorkOrderOperatorTimes`;
+      const response = await fetch(url, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(request),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete Worker Times");
+      }
+      return true;
+    } catch (error) {
+      console.error("Error deleting Worker Times:", error);
+      throw error;
+    }
+  }
+
+  async deleteWorkerComment(workOrderId: string, commentId: string) {
+    try {
+      const url = `${this.API}CommentToWorkOrder`;
+      const response = await fetch(url, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ workOrderId, commentId }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete comment");
+      }
+      return true;
+    } catch (error) {
+      console.error("Error deleting comment:", error);
       throw error;
     }
   }

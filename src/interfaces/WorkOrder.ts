@@ -35,6 +35,8 @@ export interface WorkOrder extends BaseModel {
   visibleReport?: boolean;
   customerWorkOrder?: CustomerWorkOrder;
   refCustomerId?: string;
+  workerSignature?: string;
+  clientSignature?: string;
 }
 
 export enum WorkOrderType {
@@ -186,4 +188,15 @@ export interface UpdateStateWorkOrder {
   state: StateWorkOrder;
   operatorId?: string;
   userId?: string;
+}
+
+export interface UpdateWorkOrderSign {
+  workOrderId: string;
+  workerSign: string;
+  customerSign: string;
+}
+
+export interface DeleteWorkOrderOperatorTimes {
+  workOrderId: string;
+  workOrderOperatorTimesId: string;
 }

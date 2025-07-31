@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useSparePart } from "@hooks/useSparePart";
 import { useWareHouses } from "@hooks/useWarehouse";
 import {
   ConsumeSparePart,
@@ -54,6 +55,7 @@ export const SparePartsSection = ({
 
   const [quantity, setQuantity] = useState<string>("1");
   const [search, setSearch] = useState<string>("");
+  const { createSparePart } = useSparePart();
 
   const sparePartService = new SparePartService();
 
@@ -177,7 +179,7 @@ export const SparePartsSection = ({
       if (qty > totalConsumed) {
         Alert.alert(
           "Error",
-          `No puedes devolver más de ${totalConsumed} unidades (consumidas: ${totalConsumed})`
+          `No pots retornar més de ${totalConsumed} unitats (consumides: ${totalConsumed})`
         );
         setIsLoading(false);
         return;
@@ -221,6 +223,25 @@ export const SparePartsSection = ({
     }
   };
 
+  const handleCreate = async (): Promise<void> => {
+    try {
+      const trimmedSearch = search.trim();
+      Alert.alert("Segur que vols crear un nou recanvi?", null, [
+        {
+          text: "Si",
+          onPress: async () => {
+            await createSparePart(search);
+            refresh();
+            setSearch(trimmedSearch);
+          },
+        },
+        { text: "No", style: "cancel" },
+      ]);
+    } catch (error) {
+      console.error("Error en handleCreate:", error);
+      Alert.alert("Error", "No s'ha pogut crear el recanvi");
+    }
+  };
   const handleRestore = async (
     sparePartId: string,
     sparePartCode: string,
@@ -357,6 +378,9 @@ export const SparePartsSection = ({
             marginLeft: 8,
             backgroundColor: theme.colors.primary,
             borderRadius: 8,
+          }}
+          onPress={() => {
+            handleCreate();
           }}
         >
           <Ionicons name="add-circle-outline" size={32} color="#fff" />

@@ -1,4 +1,5 @@
 import { InspectionPointsSection } from "@components/InspectionPoints/inspectionPointsSection";
+import SignModal from "@components/SignModal";
 import { SparePartsSection } from "@components/spareparts/SparepartSection";
 import { CommentsSection } from "@components/workorder/CommentSection";
 import { TabBar } from "@components/workorder/TabBar";
@@ -6,10 +7,11 @@ import { TabKey } from "@components/workorder/utils";
 import { WorkOrderForm } from "@components/workorder/WorkOrderForm";
 import { WorkOrderOperatorTimesComponent } from "@components/WorkOrderOperatorTimes/WorkOrderOperatorTimesComponent";
 import { WorkOrderWorkersComponent } from "@components/workOrderWorkersComponent/WorkOrderWorkersComponent";
-import { FontAwesome5, Ionicons } from "@expo/vector-icons";
+import { FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useWorkerTimes } from "@hooks/useWorkerTimes";
 import { useWorkOrders } from "@hooks/useWorkOrders";
 import { OperatorType } from "@interfaces/Operator";
+import { SIGNATURE_TYPES, SignatureType } from "@interfaces/Signature";
 import {
   AddCommentToWorkOrderRequest,
   StateWorkOrder,
@@ -25,9 +27,10 @@ import { configService } from "@services/configService";
 import { useAuthStore } from "@store/authStore";
 
 import * as ImagePicker from "expo-image-picker";
-import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Image,
   Modal,
@@ -37,13 +40,17 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import SignatureCanvas from "react-native-signature-canvas";
 import { theme } from "styles/theme";
 
 export default function WorkOrderDetail() {
   const { id } = useLocalSearchParams();
-  const { fetchById, updateStateWorkOrder, addCommentToWorkOrder } =
-    useWorkOrders();
+  const router = useRouter();
+  const {
+    fetchById,
+    updateStateWorkOrder,
+    addCommentToWorkOrder,
+    updateWorkOrderSign,
+  } = useWorkOrders();
   const authStore = useAuthStore();
 
   const { isCRM } = configService.getConfigSync();
@@ -55,16 +62,16 @@ export default function WorkOrderDetail() {
   const { workerTimes, setWorkerTimes, handleFinalize } = useWorkerTimes();
   const [activeTab, setActiveTab] = useState<TabKey>("inspection");
   const [isLoading, setLoading] = useState<boolean>(false);
+  const [isLoadingConfirming, setLoadingConfirming] = useState<boolean>(false);
 
   // Modales y datos de comentario/adjuntos
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [showNotFinishedModal, setShowNotFinishedModal] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [attachments, setAttachments] = useState<string[]>([]);
-  const [showSignatureModal, setShowSignatureModal] = useState(false);
-  const [signature, setSignature] = useState<string>("");
-
-  const sigCanvas = useRef<any>(null);
+  const [signatureType, setSignatureType] = useState<SignatureType>(
+    SIGNATURE_TYPES.UNDEFINED
+  );
 
   useEffect(() => {
     if (id) {
@@ -143,6 +150,29 @@ export default function WorkOrderDetail() {
     }
   };
 
+  const handleConfirmSignature = async (signature: string) => {
+    if (SIGNATURE_TYPES.WORKER === signatureType) {
+      setWorkOrder((prev) => ({
+        ...prev,
+        workerSignature: signature,
+      }));
+      setSignatureType(SIGNATURE_TYPES.CLIENT);
+    } else if (SIGNATURE_TYPES.CLIENT === signatureType) {
+      setWorkOrder((prev) => ({
+        ...prev,
+        clientSignature: signature,
+      }));
+      if (workOrder.workerSignature) {
+        await updateWorkOrderSign({
+          workOrderId: workOrder.id,
+          workerSign: workOrder.workerSignature,
+          customerSign: signature,
+        });
+      }
+      setSignatureType(SIGNATURE_TYPES.UNDEFINED);
+    }
+  };
+
   const updateSimpleState = async (state: StateWorkOrder) => {
     if (!workOrder) return;
     const payload: UpdateStateWorkOrder = {
@@ -154,81 +184,78 @@ export default function WorkOrderDetail() {
     router.push("/workorders");
   };
 
-  const confirmFinish = async () => {
-    if (!workOrder) return;
-    await updateStateWorkOrder([
-      {
-        workOrderId: workOrder.id,
-        state: StateWorkOrder.Finished,
-        operatorId: authStore.factoryWorker?.id ?? "",
-      },
-    ]);
+  const confirmFinish = async (continueWorkOrder = false) => {
+    setLoadingConfirming(true);
+    try {
+      if (!workOrder) return;
+      await updateStateWorkOrder([
+        {
+          workOrderId: workOrder.id,
+          state: StateWorkOrder.Finished,
+          operatorId: authStore.factoryWorker?.id ?? "",
+        },
+      ]);
 
-    const files = attachments.map((uri) => ({
-      uri,
-      name: uri.split("/").pop() || "file",
-      type: uri.match(/\.(mp4|mov)$/) ? "video/mp4" : "image/jpeg",
-    }));
-    if (commentText || attachments.length) {
+      if (!continueWorkOrder) {
+        const files = attachments.map((uri) => ({
+          uri,
+          name: uri.split("/").pop() || "file",
+          type: uri.match(/\.(mp4|mov)$/) ? "video/mp4" : "image/jpeg",
+        }));
+        if (commentText || attachments.length) {
+          const req: AddCommentToWorkOrderRequest = {
+            comment: commentText,
+            operatorId: authStore.factoryWorker?.id ?? "",
+            workOrderId: workOrder.id,
+            type: WorkOrderCommentType.Internal,
+            files: files as any,
+          };
+          await addCommentToWorkOrder(req);
+        }
+      }
+      setShowFinishModal(false);
+      setSignatureType(SIGNATURE_TYPES.WORKER);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoadingConfirming(false);
+    }
+  };
+
+  const confirmNotFinished = async () => {
+    setLoadingConfirming(true);
+    try {
+      if (!workOrder) return;
+      await updateStateWorkOrder([
+        {
+          workOrderId: workOrder.id,
+          state: StateWorkOrder.NotFinished,
+          operatorId: authStore.factoryWorker?.id ?? "",
+        },
+      ]);
+      const files = attachments.map((uri) => ({
+        uri,
+        name: uri.split("/").pop() || "file",
+        type: uri.match(/\.(mp4|mov)$/) ? "video/mp4" : "image/jpeg",
+      }));
       const req: AddCommentToWorkOrderRequest = {
         comment: commentText,
         operatorId: authStore.factoryWorker?.id ?? "",
         workOrderId: workOrder.id,
-        type: WorkOrderCommentType.Internal,
+        type: WorkOrderCommentType.NotFinished,
         files: files as any,
       };
-      await addCommentToWorkOrder(req);
+
+      if (commentText || attachments.length) {
+        await addCommentToWorkOrder(req);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoadingConfirming(false);
+      setShowNotFinishedModal(false);
+      router.push("/workorders");
     }
-    setShowFinishModal(false);
-    setShowSignatureModal(true);
-    //router.push("/workorders");
-  };
-
-  const confirmNotFinished = async () => {
-    if (!workOrder) return;
-    await updateStateWorkOrder([
-      {
-        workOrderId: workOrder.id,
-        state: StateWorkOrder.NotFinished,
-        operatorId: authStore.factoryWorker?.id ?? "",
-      },
-    ]);
-    const files = attachments.map((uri) => ({
-      uri,
-      name: uri.split("/").pop() || "file",
-      type: uri.match(/\.(mp4|mov)$/) ? "video/mp4" : "image/jpeg",
-    }));
-    const req: AddCommentToWorkOrderRequest = {
-      comment: commentText,
-      operatorId: authStore.factoryWorker?.id ?? "",
-      workOrderId: workOrder.id,
-      type: WorkOrderCommentType.NotFinished,
-      files: files as any,
-    };
-
-    if (commentText || attachments.length) {
-      await addCommentToWorkOrder(req);
-    }
-
-    setShowNotFinishedModal(false);
-    router.push("/workorders");
-  };
-
-  const handleSignature = (sig: string) => {
-    // sig es un dataURL base64 de la firma
-    setSignature(sig);
-    handleConfirmSignature();
-  };
-
-  const handleEmpty = () => {
-    // No dibujó nada
-    setSignature("");
-  };
-
-  const handleConfirmSignature = () => {
-    //aquí esta la fimra y se puede subir al servidor
-    console.log("Firma capturada:", signature);
-    setShowSignatureModal(false);
   };
 
   if (isLoading) {
@@ -296,7 +323,7 @@ export default function WorkOrderDetail() {
                   theme.commonStyles.finishButton,
                   { backgroundColor: theme.colors.warning },
                 ]}
-                onPress={() => setShowSignatureModal(true)}
+                onPress={() => setSignatureType(SIGNATURE_TYPES.WORKER)}
               >
                 <Ionicons name="create" size={24} color="#fff" />
               </TouchableOpacity>
@@ -424,7 +451,12 @@ export default function WorkOrderDetail() {
                 </View>
               ))}
             </ScrollView>
-            <View style={theme.commonStyles.buttonRow}>
+            <View
+              style={[
+                theme.commonStyles.buttonRow,
+                { justifyContent: "space-evenly" },
+              ]}
+            >
               <TouchableOpacity
                 style={[
                   theme.commonStyles.modalBtn,
@@ -432,16 +464,44 @@ export default function WorkOrderDetail() {
                 ]}
                 onPress={() => setShowFinishModal(false)}
               >
-                <Text style={theme.commonStyles.modalBtnText}>Cancelar</Text>
+                <MaterialIcons
+                  name="close"
+                  size={24}
+                  color={theme.colors.white}
+                />
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={[
                   theme.commonStyles.modalBtn,
                   { backgroundColor: theme.colors.success },
                 ]}
-                onPress={confirmFinish}
+                onPress={() => confirmFinish()}
               >
-                <Text style={theme.commonStyles.modalBtnText}>Confirmar</Text>
+                {isLoadingConfirming ? (
+                  <ActivityIndicator size="small" color={theme.colors.white} />
+                ) : (
+                  <MaterialIcons
+                    name="check"
+                    size={24}
+                    color={theme.colors.white}
+                  />
+                )}
+              </TouchableOpacity>
+
+              {/* Continuar */}
+              <TouchableOpacity
+                style={[
+                  theme.commonStyles.modalBtn,
+                  { backgroundColor: theme.colors.success },
+                ]}
+                onPress={() => confirmFinish(true)}
+              >
+                <MaterialIcons
+                  name="arrow-forward"
+                  size={24}
+                  color={theme.colors.white}
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -518,133 +578,13 @@ export default function WorkOrderDetail() {
           </View>
         </View>
       </Modal>
-
-      {/* Modal Firma */}
-      <Modal transparent visible={showSignatureModal} animationType="fade">
-        <View style={styles.backdrop}>
-          <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>Firma aquí</Text>
-
-            <View style={styles.signatureContainer}>
-              <SignatureCanvas
-                ref={sigCanvas}
-                onOK={handleSignature}
-                onEmpty={handleEmpty}
-                descriptionText="Por favor, firme abajo"
-                clearText="Limpiar"
-                confirmText="Guardar"
-                webviewProps={{
-                  cacheEnabled: true,
-                  androidLayerType: "hardware",
-                }}
-              />
-            </View>
-
-            <View style={theme.commonStyles.buttonRow}>
-              <TouchableOpacity
-                style={[
-                  theme.commonStyles.modalBtn,
-                  { backgroundColor: theme.colors.warning },
-                ]}
-                onPress={() => {
-                  sigCanvas.current.clearSignature();
-                  setSignature("");
-                }}
-              >
-                <Ionicons name="trash" size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
-            <View style={[theme.commonStyles.buttonRow, { marginTop: 24 }]}>
-              <TouchableOpacity
-                style={[
-                  theme.commonStyles.modalBtn,
-                  { backgroundColor: theme.colors.error },
-                ]}
-                onPress={() => {
-                  sigCanvas.current.clearSignature();
-                  setSignature("");
-                  setShowSignatureModal(false);
-                }}
-              >
-                <Ionicons name="close-circle" size={24} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  theme.commonStyles.modalBtn,
-                  { backgroundColor: theme.colors.success },
-                ]}
-                onPress={() => sigCanvas.current.readSignature()}
-              >
-                <Ionicons name="create" size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      {signatureType !== SIGNATURE_TYPES.UNDEFINED && (
+        <SignModal
+          signatureType={signatureType}
+          handleConfirmSignature={handleConfirmSignature}
+          onClose={() => setSignatureType(SIGNATURE_TYPES.UNDEFINED)}
+        />
+      )}
     </SafeAreaView>
   );
 }
-const styles = {
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center" as "center",
-    padding: 20,
-  },
-  modalBox: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    overflow: "hidden" as "hidden",
-    padding: 16,
-  },
-  modalTitle: { fontSize: 18, marginBottom: 12 },
-  textArea: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 5,
-    padding: 10,
-    height: 100,
-    marginBottom: 12,
-  },
-  addButton: {
-    padding: 12,
-    backgroundColor: theme.colors.primary,
-    borderRadius: 5,
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  addButtonText: { color: "#fff", fontSize: 16 },
-  previewRow: { marginBottom: 12 },
-  previewBox: { marginRight: 10, position: "relative" },
-  previewImage: { width: 60, height: 60, borderRadius: 5 },
-  removeIcon: {
-    position: "absolute",
-    top: -6,
-    right: -6,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    borderRadius: 12,
-    padding: 2,
-  },
-  buttonRow: {
-    flexDirection: "row",
-    marginTop: 8,
-  },
-  modalBtn: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 5,
-    alignItems: "center",
-  },
-  modalBtnText: {
-    color: "#fff",
-    fontSize: 16,
-  },
-  signatureContainer: {
-    height: 200,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 6,
-    overflow: "hidden" as const,
-    marginBottom: 12,
-  },
-};

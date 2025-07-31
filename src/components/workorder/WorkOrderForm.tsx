@@ -8,6 +8,7 @@ import {
 import dayjs from "dayjs";
 import React from "react";
 import {
+  Image,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -221,13 +222,6 @@ export const WorkOrderForm: React.FC<Props> = ({ workOrder, onRefresh }) => {
           <Text>{workOrder.operator.map((o) => o.name).join(", ")}</Text>
         </View>
 
-        {/*workOrder.stateWorkOrder === StateWorkOrder.Finished && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>TREBALL FIANLITZAT</Text>
-            <Text>{workOrder.operator.map((o) => o.name)}</Text>
-          </View>
-        )*/}
-
         {workOrder.stateWorkOrder === StateWorkOrder.NotFinished && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>MOTIU DE NO FINALITZACIÓ</Text>
@@ -250,6 +244,36 @@ export const WorkOrderForm: React.FC<Props> = ({ workOrder, onRefresh }) => {
             </Text>
           </View>
         )}
+
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            marginVertical: 16,
+          }}
+        >
+          <View style={{ alignItems: "center" }}>
+            <Text style={styles.sectionTitle}>FIRMA TÈCNIC</Text>
+            {workOrder.workerSignature && (
+              <Image
+                source={{ uri: workOrder.workerSignature }}
+                style={{ width: 150, height: 100 }}
+                resizeMode="contain"
+              />
+            )}
+          </View>
+
+          <View style={{ alignItems: "center" }}>
+            <Text style={styles.sectionTitle}>FIRMA CLIENT</Text>
+            {workOrder.clientSignature && (
+              <Image
+                source={{ uri: workOrder.clientSignature }}
+                style={{ width: 150, height: 100 }}
+                resizeMode="contain"
+              />
+            )}
+          </View>
+        </View>
       </View>
     </ScrollView>
   );

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "@store/authStore";
-import { router, Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import React, { useEffect } from "react";
 import { StatusBar, TouchableOpacity, View } from "react-native";
 import { colors } from "styles/colors";
@@ -10,6 +10,7 @@ import { theme } from "styles/theme";
 
 export default function RootLayout() {
   const { logout } = useAuthStore();
+  const router = useRouter();
 
   useEffect(() => {
     console.log("Cargando configuración...");
@@ -90,7 +91,34 @@ export default function RootLayout() {
               </TouchableOpacity>
             ),
             headerBackVisible: false,
-            headerLeft: () => null,
+            headerLeft: () => (
+              <TouchableOpacity
+                onPress={() => {
+                  router.push("/new/repairReportForm");
+                }}
+                style={{
+                  marginLeft: 20,
+                  padding: 12,
+                  minWidth: 60,
+                  minHeight: 60,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  borderRadius: 12,
+                  backgroundColor: "#ffffff22",
+                }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <View style={theme.commonStyles.backButtonContent}>
+                  <Ionicons name="create" size={40} color="#fff" />
+                </View>
+              </TouchableOpacity>
+            ),
+          })}
+        />
+        <Stack.Screen
+          name="new/repairReportForm"
+          options={({ navigation }) => ({
+            title: "Nou Parte",
           })}
         />
       </Stack>

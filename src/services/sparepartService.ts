@@ -60,6 +60,27 @@ class SparePartService {
       throw error;
     }
   }
+
+  async createSparePart(sparePart: SparePart): Promise<boolean> {
+    try {
+      const url = `${this.API}sparePart`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(sparePart),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update sparePart`);
+      }
+      return true;
+    } catch (error) {
+      console.error("Error updating SparePart:", error);
+      throw error;
+    }
+  }
 }
 
 export default SparePartService;

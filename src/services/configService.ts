@@ -18,13 +18,16 @@ class ConfigService {
     if (!this.loadingPromise) {
       this.loadingPromise = (async () => {
         const url = `${this.API}config`;
+        console.log("URL:", url);
         const response = await fetch(url);
         if (!response.ok) {
+          console.error("Error fetching config:", response);
           throw new Error("Failed to fetch config");
         }
         const operators: Config =
           response.status === 204 ? [] : await response.json();
         this.configData = operators;
+        console.log("Config loaded:", operators);
         return operators;
       })();
     }

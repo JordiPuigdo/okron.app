@@ -1,10 +1,11 @@
 {
   "expo": {
-    "name": "myokronapp",
-    "slug": "myokronapp",
+    "name": "Kolder",
+    "displayName": "Kolder",
+    "slug": "Kolder",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logoPng.png",
+    "icon": "./assets/logo.png",
     "scheme": "myokronapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -13,7 +14,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/logo.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,

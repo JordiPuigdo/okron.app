@@ -67,7 +67,7 @@ const WorkersTimeModal = ({ operatorId, workorder, setOperatorId }: Props) => {
               <MaterialIcons name="close" size={22} color="white" />
             </TouchableOpacity>
             <Text style={styles.headerText}>
-              {filteredWorkerTimes[0]?.operator.name || "Registro de Tiempos"}
+              {filteredWorkerTimes[0]?.operator.name || "Registre de temps"}
             </Text>
           </View>
 
@@ -82,6 +82,9 @@ const WorkersTimeModal = ({ operatorId, workorder, setOperatorId }: Props) => {
                   )
                 );
               }
+            }}
+            onRemove={(id) => {
+              setWorkerTimes((prev) => prev.filter((t) => t.id !== id));
             }}
             workOrderId={workorder.id}
             workerTimes={filteredWorkerTimes}

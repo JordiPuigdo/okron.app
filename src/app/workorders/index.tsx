@@ -64,6 +64,7 @@ export default function workOrders() {
   const [showFinishedOnly, setShowFinishedOnly] = useState(false);
 
   useEffect(() => {
+    console.log("Auth store:", authStore);
     if (authStore.factoryWorker) {
       fetchData();
     }

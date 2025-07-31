@@ -308,6 +308,8 @@ export const commonStyles = StyleSheet.create({
     paddingVertical: spacing.s,
     paddingHorizontal: spacing.m,
     borderRadius: 8,
+    alignItems: "center",
+    alignContent: "center",
   },
   startButton: {
     backgroundColor: colors.buttonStart,

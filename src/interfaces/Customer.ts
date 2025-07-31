@@ -17,3 +17,22 @@ export interface CustomerAddress extends BaseModel {
   province: string;
   isPrimary: boolean;
 }
+
+export interface Customer extends BaseModel {
+  code: string;
+  name: string;
+  taxId: string;
+  accountNumber: string;
+  fiscalName: string;
+  phoneNumber: string;
+  whatsappNumber: string;
+  email: string;
+  address: CustomerAddress[];
+  installations: CustomerInstallations[];
+  comments: string;
+}
+
+export interface CustomerInstallations extends BaseModel {
+  code: string;
+  address: CustomerAddress;
+}

@@ -5,13 +5,14 @@ import { useState } from "react";
 export const useLogin = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const setFactoryWorker = useAuthStore((state) => state.setFactoryWorker);
+  const { setFactoryWorker } = useAuthStore();
 
   const login = async (username: string): Promise<boolean> => {
     setLoading(true);
     setError(null);
     try {
       const factoryWorker = await loginRequest(username);
+      console.log("Logged in factory worker:", factoryWorker);
       if (factoryWorker == null) return false;
       setFactoryWorker(factoryWorker);
       return true;

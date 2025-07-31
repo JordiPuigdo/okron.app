@@ -5,14 +5,14 @@ import {
   WorkOrderOperatorTimes,
   WorkOrderTimeType,
 } from "@interfaces/WorkOrder";
-import { formatTimeSpan } from "@utils/workorderUtils";
+
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
 import React, { useCallback, useRef, useState } from "react";
 import {
+  Alert,
   FlatList,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -24,6 +24,7 @@ import { useWorkOrders } from "@hooks/useWorkOrders";
 import { configService } from "@services/configService";
 import { useAuthStore } from "@store/authStore";
 import { theme } from "styles/theme";
+import { RenderItemTime } from "./RenderItemTime";
 
 dayjs.extend(duration);
 
@@ -33,6 +34,7 @@ interface Props {
   onFinalize(operatorId: string): void;
   workOrderId: string;
   workerId?: string;
+  onRemove?(id: string): void;
 }
 
 export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
@@ -41,12 +43,13 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
   onFinalize,
   workOrderId,
   workerId = undefined,
+  onRemove,
 }) => {
   const { updateStateWorkOrder } = useWorkOrders();
   const { isCRM } = configService.getConfigSync();
 
   const [timeType, setTimeType] = useState<WorkOrderTimeType>(
-    WorkOrderTimeType.Time
+    WorkOrderTimeType.Travel
   );
   const currentWorkerId =
     workerId ?? useAuthStore.getState().factoryWorker.id.toLocaleLowerCase();
@@ -59,8 +62,11 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
     ) !== undefined
   );
 
-  const { updateWorkOrderOperatorTimes, addWorkOrderOperatorTimes } =
-    useWorkOrders();
+  const {
+    updateWorkOrderOperatorTimes,
+    addWorkOrderOperatorTimes,
+    deleteWorkerTimes,
+  } = useWorkOrders();
   const { operators } = useOperators();
 
   const safeUpdateState = useCallback(
@@ -169,75 +175,8 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
     }
   };
 
-  const renderItem = ({ item }: { item: WorkOrderOperatorTimes }) => {
-    return (
-      <View style={theme.commonStyles.timeCard}>
-        <View style={styles.itemHeader}>
-          <Text style={theme.commonStyles.operatorName}>
-            {item.operator.name}
-          </Text>
-          <MaterialIcons
-            name={
-              item.type === WorkOrderTimeType.Travel ? "directions-car" : "work"
-            }
-            size={20}
-            color={
-              item.type === WorkOrderTimeType.Travel
-                ? theme.colors.primary
-                : theme.colors.success
-            }
-            style={styles.typeIcon}
-          />
-        </View>
-        <View style={theme.commonStyles.timeRow}>
-          <View style={theme.commonStyles.timeColumn}>
-            <Text style={theme.commonStyles.timeValue}>
-              {dayjs(item.startTime).format("DD/MM/YYYY")}
-            </Text>
-            <Text style={theme.commonStyles.timeValue}>
-              {dayjs(item.startTime).format("HH:mm:ss")}
-            </Text>
-          </View>
-
-          <View style={theme.commonStyles.timeColumn}>
-            <Text style={theme.commonStyles.timeValue}>
-              {dayjs(item.startTime).format("DD/MM/YYYY")}
-            </Text>
-            <Text style={theme.commonStyles.timeValue}>
-              {item.endTime ? dayjs(item.endTime).format("HH:mm:ss") : "--"}
-            </Text>
-          </View>
-
-          <View style={theme.commonStyles.timeColumn}>
-            <Text style={theme.commonStyles.timeValue}>
-              {getTimeSpan(item)}
-            </Text>
-          </View>
-        </View>
-      </View>
-    );
-  };
-
-  const getTimeSpan = (item: WorkOrderOperatorTimes) => {
-    if (item.totalTime && item.totalTime.includes(":")) {
-      return formatTimeSpan(item.totalTime);
-    }
-    if (item.totalTime) {
-      const start = dayjs(item.startTime);
-      const end = dayjs(item.endTime);
-      const diffInMs = end.diff(start);
-      const dur = dayjs.duration(diffInMs);
-
-      const hours = String(Math.floor(dur.asHours())).padStart(2, "0");
-      const minutes = String(dur.minutes()).padStart(2, "0");
-      const seconds = String(dur.seconds()).padStart(2, "0");
-
-      return `${hours}:${minutes}:${seconds}`;
-    }
-    return "--:--:--";
-  };
-
   const handleSaveManualEntry = async (start: Date, end: Date) => {
+    setModalVisible(false);
     const newRecord: WorkOrderOperatorTimes = {
       id: Math.random().toString(),
       startTime: start,
@@ -278,30 +217,32 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
     setIsRunning(false);
   };
 
+  const handleDeleteTime = async (id: string) => {
+    Alert.alert("¿Está vols eliminar el registre?", null, [
+      { text: "Cancelar", style: "cancel" },
+      { text: "Eliminar", onPress: () => handleDelete(id) },
+    ]);
+  };
+
+  const handleDelete = async (id: string) => {
+    await deleteWorkerTimes({
+      workOrderId: workOrderId,
+      workOrderOperatorTimesId: id,
+    });
+    onRemove?.(id);
+  };
+
   return (
     <View style={theme.commonStyles.timeTrackerContainer}>
-      <View style={theme.commonStyles.timeTrackerHeader}>
+      <View
+        style={[
+          theme.commonStyles.timeTrackerHeader,
+          { flexDirection: "column", gap: 12 },
+        ]}
+      >
+        {/* Tipo de trabajo */}
         {isCRM && (
-          <View style={styles.typeSelectorContainer}>
-            <TouchableOpacity
-              style={[
-                styles.typeButton,
-                timeType === WorkOrderTimeType.Time && styles.typeButtonActive,
-              ]}
-              onPress={() => setTimeType(WorkOrderTimeType.Time)}
-              disabled={isRunning}
-            >
-              <MaterialIcons
-                name="work"
-                size={24}
-                color={
-                  timeType === WorkOrderTimeType.Time
-                    ? theme.colors.white
-                    : theme.colors.textSecondary
-                }
-              />
-            </TouchableOpacity>
-
+          <View style={[styles.typeSelectorContainer, { marginBottom: 8 }]}>
             <TouchableOpacity
               style={[
                 styles.typeButton,
@@ -313,7 +254,7 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
             >
               <MaterialIcons
                 name="directions-car"
-                size={24}
+                size={20}
                 color={
                   timeType === WorkOrderTimeType.Travel
                     ? theme.colors.white
@@ -321,56 +262,84 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
                 }
               />
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.typeButton,
+                timeType === WorkOrderTimeType.Time && styles.typeButtonActive,
+              ]}
+              onPress={() => setTimeType(WorkOrderTimeType.Time)}
+              disabled={isRunning}
+            >
+              <MaterialIcons
+                name="work"
+                size={20}
+                color={
+                  timeType === WorkOrderTimeType.Time
+                    ? theme.colors.white
+                    : theme.colors.textSecondary
+                }
+              />
+            </TouchableOpacity>
           </View>
         )}
-        <TouchableOpacity
-          style={[
-            theme.commonStyles.actionButton,
-            isRunning
-              ? theme.commonStyles.disabledButton
-              : theme.commonStyles.startButton,
-          ]}
-          onPress={handleStart}
-          disabled={isRunning}
-        >
-          <MaterialIcons
-            name="play-arrow"
-            size={28}
-            color={theme.colors.white}
-          />
-        </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[
-            theme.commonStyles.actionButton,
-            !isRunning
-              ? theme.commonStyles.disabledButton
-              : theme.commonStyles.stopButton,
-          ]}
-          onPress={handleStop}
-          disabled={!isRunning}
+        {/* Botones principales */}
+        <View
+          style={{ flexDirection: "row", justifyContent: "center", gap: 12 }}
         >
-          <MaterialIcons name="stop" size={28} color={theme.colors.white} />
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              theme.commonStyles.actionButton,
+              isRunning
+                ? theme.commonStyles.disabledButton
+                : theme.commonStyles.startButton,
+            ]}
+            onPress={handleStart}
+            disabled={isRunning}
+          >
+            <MaterialIcons
+              name="play-arrow"
+              size={28}
+              color={theme.colors.white}
+            />
+          </TouchableOpacity>
 
+          <TouchableOpacity
+            style={[
+              theme.commonStyles.actionButton,
+              !isRunning
+                ? theme.commonStyles.disabledButton
+                : theme.commonStyles.stopButton,
+            ]}
+            onPress={handleStop}
+            disabled={!isRunning}
+          >
+            <MaterialIcons name="stop" size={28} color={theme.colors.white} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Entrada manual */}
         <TouchableOpacity
           style={[
             theme.commonStyles.actionButton,
             theme.commonStyles.manualButton,
             isRunning && theme.commonStyles.disabledButton,
+            { marginTop: 12 },
           ]}
           onPress={handleManualEntry}
           disabled={isRunning}
         >
-          <FontAwesome5 name="plus" size={24} color={theme.colors.white} />
+          <FontAwesome5 name="plus" size={20} color={theme.colors.white} />
         </TouchableOpacity>
       </View>
 
-      {/* LIST */}
       <FlatList
         data={workerTimes}
         keyExtractor={(item) => item.id ?? Math.random().toString()}
-        renderItem={renderItem}
+        renderItem={({ item }) => (
+          <RenderItemTime item={item} onDelete={handleDeleteTime} />
+        )}
         contentContainerStyle={theme.commonStyles.listContent}
       />
 
@@ -405,11 +374,9 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.primary,
   },
   typeButtonText: {
-    marginLeft: 8,
+    marginLeft: 6,
+    fontSize: 14,
     color: theme.colors.textSecondary,
-  },
-  typeButtonTextActive: {
-    color: theme.colors.white,
   },
   itemHeader: {
     flexDirection: "row",
@@ -419,5 +386,14 @@ const styles = StyleSheet.create({
   },
   typeIcon: {
     marginLeft: 8,
+  },
+  typeButtonTextActive: {
+    color: theme.colors.white,
+    fontWeight: "600",
+  },
+  actionText: {
+    marginTop: 4,
+    fontSize: 12,
+    color: theme.colors.white,
   },
 });
