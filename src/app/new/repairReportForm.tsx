@@ -1,3 +1,4 @@
+import AssetSelector from "@components/AssetSelector";
 import CustomerSelector from "@components/CustomerSelector";
 import InstallationSelector from "@components/InstallationSelector";
 import { FontAwesome5 } from "@expo/vector-icons";
@@ -12,7 +13,7 @@ import {
 } from "@interfaces/WorkOrder";
 
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Picker } from "@react-native-picker/picker";
+import { configService } from "@services/configService";
 import { useAuthStore } from "@store/authStore";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -41,11 +42,12 @@ const RepairReportForm = () => {
   //const navigation = useNavigation();
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-
+  const { factoryWorker } = useAuthStore();
+  const { isCRM } = configService.getConfigSync();
   const { customers, getById } = useCustomers();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [loginUser] = useState({ agentId: "user-id" });
+
   const authStore = useAuthStore();
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [formData, setFormData] = useState<Partial<RepairReport>>({
@@ -59,7 +61,7 @@ const RepairReportForm = () => {
     workOrderType: WorkOrderType.Corrective,
     originWorkOrder: OriginWorkOrder.Maintenance,
     downtimeReasonId: "",
-    operatorCreatorId: "686e4b24bf360fa1bbfe001e",
+    operatorCreatorId: factoryWorker.id,
     operatorId: [],
     userId: "67dec0ce2464c1a06ae59182",
   });
@@ -174,7 +176,6 @@ const RepairReportForm = () => {
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>Núm. Ordre</Text>
                 <TextInput
-                  label="Código"
                   value={formData.code || ""}
                   onChangeText={(text) =>
                     setFormData((prev) => ({ ...prev, code: text }))
@@ -186,19 +187,20 @@ const RepairReportForm = () => {
                   <Text style={styles.errorText}>{errors.code}</Text>
                 )}
               </View>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Referència Client</Text>
-                <TextInput
-                  label="Referencia"
-                  value={formData.refCustomerId || ""}
-                  onChangeText={(text) =>
-                    setFormData((prev) => ({ ...prev, refCustomerId: text }))
-                  }
-                  style={styles.input}
-                  mode="outlined"
-                />
-              </View>
+              {isCRM && (
+                <View style={styles.inputContainer}>
+                  <Text style={styles.label}>Referència Client</Text>
+                  <TextInput
+                    label="Referencia"
+                    value={formData.refCustomerId || ""}
+                    onChangeText={(text) =>
+                      setFormData((prev) => ({ ...prev, refCustomerId: text }))
+                    }
+                    style={styles.input}
+                    mode="outlined"
+                  />
+                </View>
+              )}
             </View>
 
             <View style={styles.inputContainer}>
@@ -226,7 +228,7 @@ const RepairReportForm = () => {
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Descripció</Text>
               <TextInput
-                label="Descripción"
+                label="Descripció"
                 value={formData.description || ""}
                 onChangeText={(text) =>
                   setFormData((prev) => ({ ...prev, description: text }))
@@ -244,31 +246,20 @@ const RepairReportForm = () => {
               )}
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Objecte</Text>
-              <Picker
-                selectedValue={selectedAssets[0] || ""}
-                onValueChange={handleAssetSelected}
-                style={styles.picker}
-              >
-                <Picker.Item label="Selecciona un equip" value="" />
-                {assets &&
-                  assets.map((asset) => (
-                    <Picker.Item
-                      key={asset.id}
-                      label={`${asset.code} - ${asset.description}`}
-                      value={asset.id}
-                    />
-                  ))}
-              </Picker>
-            </View>
-
-            <CustomerSelector
-              customers={customers}
-              selectedCustomer={selectedCustomer}
-              onSelectCustomer={handleSelectedCustomer}
-              onClearSelection={handleDeleteSelectedCustomer}
+            <AssetSelector
+              assets={assets}
+              selectedAssets={selectedAssets}
+              handleAssetSelected={handleAssetSelected}
+              isCRM={isCRM}
             />
+            {isCRM && (
+              <CustomerSelector
+                customers={customers}
+                selectedCustomer={selectedCustomer}
+                onSelectCustomer={handleSelectedCustomer}
+                onClearSelection={handleDeleteSelectedCustomer}
+              />
+            )}
 
             {selectedCustomer?.installations?.length > 0 && (
               <InstallationSelector

@@ -1,4 +1,5 @@
 import { Customer } from "@interfaces/Customer";
+import { configService } from "@services/configService";
 import { CustomerService } from "@services/customerService";
 import { useEffect, useState } from "react";
 
@@ -6,7 +7,7 @@ export function useCustomers() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const { isCRM } = configService.getConfigSync();
   const customerService = new CustomerService();
 
   const fetchCustomers = async () => {
@@ -27,7 +28,7 @@ export function useCustomers() {
   };
 
   useEffect(() => {
-    fetchCustomers();
+    isCRM && fetchCustomers();
   }, []);
 
   const getById = async (id: string) => {
@@ -50,7 +51,6 @@ export function useCustomers() {
     loading,
     error,
     fetchCustomers,
-
     getById,
   };
 }
