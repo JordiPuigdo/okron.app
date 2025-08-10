@@ -262,6 +262,11 @@ export default function WorkOrderDetail() {
     return <LoadingScreen />;
   }
 
+  function handleRemoveTime(id: string) {
+    console.log("Removing time:", id);
+    setWorkerTimes(workerTimes.filter((t) => t.id !== id));
+  }
+
   return (
     <SafeAreaView style={theme.commonStyles.mainContainer}>
       <View style={theme.commonStyles.header}>
@@ -402,6 +407,7 @@ export default function WorkOrderDetail() {
               onCreate={(c) => setWorkerTimes([...workerTimes, c])}
               onFinalize={handleFinalize}
               workOrderId={workOrder.id}
+              onRemove={(e) => handleRemoveTime(e)}
             />
           ))}
       </View>

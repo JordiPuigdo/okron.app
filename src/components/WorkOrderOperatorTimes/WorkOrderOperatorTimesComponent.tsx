@@ -49,7 +49,7 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
   const { isCRM } = configService.getConfigSync();
 
   const [timeType, setTimeType] = useState<WorkOrderTimeType>(
-    WorkOrderTimeType.Travel
+    isCRM ? WorkOrderTimeType.Travel : WorkOrderTimeType.Time
   );
   const currentWorkerId =
     workerId ?? useAuthStore.getState().factoryWorker.id.toLocaleLowerCase();
@@ -229,7 +229,9 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
       workOrderId: workOrderId,
       workOrderOperatorTimesId: id,
     });
-    onRemove?.(id);
+
+    Alert.alert("Registre eliminat");
+    onRemove && onRemove(id);
   };
 
   return (

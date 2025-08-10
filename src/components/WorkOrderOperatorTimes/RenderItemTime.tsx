@@ -79,7 +79,7 @@ export const RenderItemTime = ({ item, onDelete }: Props) => {
 
         <View style={styles.timeColumn}>
           <Text style={styles.timeValue}>
-            {dayjs(item.endTime).format("DD/MM")}
+            {item.endTime ? dayjs(item.endTime).format("DD/MM") : "--"}
           </Text>
           <Text style={styles.timeValue}>
             {item.endTime ? dayjs(item.endTime).format("HH:mm") : "--"}

@@ -19,12 +19,13 @@ export const TabBar = ({
   const isCRM = configService.getConfigSync().isCRM;
 
   const filteredTabs = TABS.filter((tab) => {
-    if (workOrderType === WorkOrderType.Corrective) {
-      return tab.key != "inspection";
-    }
     if (!isCRM && tab.key == "workOrder") {
       return false;
     }
+    if (workOrderType === WorkOrderType.Corrective) {
+      return tab.key != "inspection";
+    }
+
     return tab.visible !== false;
   });
 

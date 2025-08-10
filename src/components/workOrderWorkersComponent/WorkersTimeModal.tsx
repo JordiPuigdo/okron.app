@@ -18,24 +18,34 @@ const WorkersTimeModal = ({ operatorId, workorder, setOperatorId }: Props) => {
   const filteredWorkerTimes = useMemo(() => {
     if (!operatorId) return [];
 
+    // Obtén los tiempos del workorder
     const fromWorkOrder =
       workorder.workOrderOperatorTimes?.filter(
         (t) => t.operator.id === operatorId
       ) || [];
 
-    const fromLocalState = workerTimes.filter(
-      (t) => t.operator.id === operatorId
-    );
+    // Crea una copia para modificar
+    let combined = [...fromWorkOrder];
+    console.log("Combined:", combined);
 
-    const combined = [...fromWorkOrder];
-    fromLocalState.forEach((localTime) => {
+    // Filtra los que se han eliminado del estado local
+    const localTimeIds = new Set(workerTimes.map((t) => t.id));
+    combined = combined.filter((t) => localTimeIds.has(t.id));
+
+    // Añade los nuevos que solo están en el estado local
+    workerTimes.forEach((localTime) => {
       if (!combined.some((t) => t.id === localTime.id)) {
         combined.push(localTime);
       }
     });
 
     return combined;
-  }, [operatorId, workorder.workOrderOperatorTimes, workerTimes]);
+  }, [
+    operatorId,
+    workorder.workOrderOperatorTimes,
+    workerTimes,
+    setWorkerTimes,
+  ]);
 
   useEffect(() => {
     if (operatorId && workorder.workOrderOperatorTimes) {

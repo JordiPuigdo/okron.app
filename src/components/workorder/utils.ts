@@ -37,7 +37,7 @@ export const TABS: TabItem[] = [
       size: 24,
       color: "black",
     }),
-    visible: true,
+    visible: false,
   },
   {
     key: "comments",
