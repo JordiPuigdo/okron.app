@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Kolder",
-    "displayName": "Kolder",
-    "slug": "Kolder",
+    "name": "Jpont",
+    "displayName": "Jpont",
+    "slug": "Jpont",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
@@ -23,14 +23,14 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/logo.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/logo.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"

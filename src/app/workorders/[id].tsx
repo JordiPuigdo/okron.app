@@ -317,7 +317,7 @@ export default function WorkOrderDetail() {
                 color="#fff"
               />
             </TouchableOpacity>
-            {workOrder.stateWorkOrder == StateWorkOrder.Finished && (
+            {isCRM && workOrder.stateWorkOrder == StateWorkOrder.Finished && (
               <TouchableOpacity
                 style={[
                   theme.commonStyles.finishButton,

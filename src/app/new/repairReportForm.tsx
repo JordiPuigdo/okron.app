@@ -151,9 +151,10 @@ const RepairReportForm = () => {
     if (!formData.description?.trim()) {
       newErrors.description = "La descripción es obligatoria";
     }
-
-    if (!formData.customerId) {
-      newErrors.customerId = "Falta el cliente";
+    if (isCRM) {
+      if (!formData.customerId) {
+        newErrors.customerId = "Falta el cliente";
+      }
     }
 
     setErrors(newErrors);
@@ -245,13 +246,14 @@ const RepairReportForm = () => {
                 <Text style={styles.errorText}>{errors.description}</Text>
               )}
             </View>
-
-            <AssetSelector
-              assets={assets}
-              selectedAssets={selectedAssets}
-              handleAssetSelected={handleAssetSelected}
-              isCRM={isCRM}
-            />
+            {assets && assets.length > 0 && (
+              <AssetSelector
+                assets={assets}
+                selectedAssets={selectedAssets}
+                handleAssetSelected={handleAssetSelected}
+                isCRM={isCRM}
+              />
+            )}
             {isCRM && (
               <CustomerSelector
                 customers={customers}
