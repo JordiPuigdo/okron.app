@@ -1,9 +1,15 @@
 import { WorkOrderOperatorTimesComponent } from "@components/WorkOrderOperatorTimes/WorkOrderOperatorTimesComponent";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useWorkerTimes } from "@hooks/useWorkerTimes";
-import { WorkOrder } from "@interfaces/WorkOrder";
-import React, { useEffect, useMemo } from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { WorkOrder, WorkOrderOperatorTimes } from "@interfaces/WorkOrder";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Alert,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { theme } from "styles/theme";
 
 interface Props {
@@ -13,57 +19,74 @@ interface Props {
 }
 
 const WorkersTimeModal = ({ operatorId, workorder, setOperatorId }: Props) => {
-  const { workerTimes, setWorkerTimes, handleFinalize } = useWorkerTimes();
+  const [localWorkerTimes, setLocalWorkerTimes] = useState<
+    WorkOrderOperatorTimes[]
+  >([]);
 
-  const filteredWorkerTimes = useMemo(() => {
-    if (!operatorId) return [];
-
-    // Obtén los tiempos del workorder
-    const fromWorkOrder =
-      workorder.workOrderOperatorTimes?.filter(
-        (t) => t.operator.id === operatorId
-      ) || [];
-
-    // Crea una copia para modificar
-    let combined = [...fromWorkOrder];
-    console.log("Combined:", combined);
-
-    // Filtra los que se han eliminado del estado local
-    const localTimeIds = new Set(workerTimes.map((t) => t.id));
-    combined = combined.filter((t) => localTimeIds.has(t.id));
-
-    // Añade los nuevos que solo están en el estado local
-    workerTimes.forEach((localTime) => {
-      if (!combined.some((t) => t.id === localTime.id)) {
-        combined.push(localTime);
-      }
-    });
-
-    return combined;
-  }, [
-    operatorId,
-    workorder.workOrderOperatorTimes,
-    workerTimes,
-    setWorkerTimes,
-  ]);
-
+  // Sincronizar los tiempos locales con los del workorder cuando cambia el operatorId
   useEffect(() => {
     if (operatorId && workorder.workOrderOperatorTimes) {
-      const activeTimes = workorder.workOrderOperatorTimes.filter(
-        (t) => t.operator.id === operatorId && !t.endTime
+      const operatorTimes = workorder.workOrderOperatorTimes.filter(
+        (t) => t.operator.id === operatorId
       );
-      setWorkerTimes(activeTimes);
+      setLocalWorkerTimes(operatorTimes);
+    } else {
+      setLocalWorkerTimes([]);
     }
-  }, [operatorId, workorder.id]);
+  }, [operatorId, workorder.workOrderOperatorTimes]);
 
-  const handleCreate = (newRecord: any) => {
-    setWorkerTimes((prev) => [...prev, newRecord]);
-  };
+  // Obtener el operario actual
+  const currentOperator = useMemo(() => {
+    if (!operatorId) return null;
+    return (
+      workorder.workOrderOperatorTimes?.find((op) => op.id === operatorId) ||
+      null
+    );
+  }, [operatorId, workorder.workOrderOperatorTimes]);
 
-  const handleClose = () => {
+  const handleCreate = useCallback((newRecord: any) => {
+    setLocalWorkerTimes((prev) => [...prev, newRecord]);
+  }, []);
+
+  const handleFinalize = useCallback((timeId: string) => {
+    setLocalWorkerTimes((prev) =>
+      prev.map((time) => {
+        if (time.id === timeId && !time.endTime) {
+          const endTime = new Date();
+          const startTime = new Date(time.startTime);
+          const totalTime = (
+            endTime.getTime() - startTime.getTime()
+          ).toString();
+
+          return {
+            ...time,
+            endTime: endTime,
+            totalTime: totalTime,
+          };
+        }
+        return time;
+      })
+    );
+
+    Alert.alert(
+      "Temps finalitzat",
+      "El registre de temps s'ha finalitzat correctament",
+      [
+        {
+          text: "OK",
+          onPress: () => console.log("Temps finalitzat"),
+        },
+      ]
+    );
+  }, []);
+
+  const handleRemove = useCallback((timeId: string) => {
+    setLocalWorkerTimes((prev) => prev.filter((time) => time.id !== timeId));
+  }, []);
+
+  const handleClose = useCallback(() => {
     setOperatorId(undefined);
-    setWorkerTimes([]);
-  };
+  }, [setOperatorId]);
 
   return (
     <Modal transparent visible={operatorId !== undefined} animationType="fade">
@@ -77,27 +100,16 @@ const WorkersTimeModal = ({ operatorId, workorder, setOperatorId }: Props) => {
               <MaterialIcons name="close" size={22} color="white" />
             </TouchableOpacity>
             <Text style={styles.headerText}>
-              {filteredWorkerTimes[0]?.operator.name || "Registre de temps"}
+              {currentOperator?.operator.name || "Registre de temps"}
             </Text>
           </View>
 
           <WorkOrderOperatorTimesComponent
             onCreate={handleCreate}
-            onFinalize={(id) => {
-              handleFinalize(id);
-              if (workorder.workOrderOperatorTimes) {
-                setWorkerTimes(
-                  workorder.workOrderOperatorTimes.filter(
-                    (t) => t.operator.id === operatorId && !t.endTime
-                  )
-                );
-              }
-            }}
-            onRemove={(id) => {
-              setWorkerTimes((prev) => prev.filter((t) => t.id !== id));
-            }}
+            onFinalize={handleFinalize}
+            onRemove={handleRemove}
             workOrderId={workorder.id}
-            workerTimes={filteredWorkerTimes}
+            workerTimes={localWorkerTimes}
             workerId={operatorId}
           />
         </View>
@@ -121,7 +133,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     fontSize: 18,
     fontWeight: "bold",
-    marginLeft: -24, // Compensa el espacio del botón
+    marginLeft: -24,
   },
   modalBox: {
     backgroundColor: "#fff",

@@ -41,8 +41,8 @@ export default function workOrders() {
       if (!data) return;
       setWorkOrders(
         data.sort((a, b) => {
-          const startTimeA = new Date(a.startTime).valueOf();
-          const startTimeB = new Date(b.startTime).valueOf();
+          const startTimeA = new Date(a.creationTime).valueOf();
+          const startTimeB = new Date(b.creationTime).valueOf();
           return startTimeA - startTimeB;
         })
       );

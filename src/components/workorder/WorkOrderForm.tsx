@@ -254,9 +254,9 @@ export const WorkOrderForm: React.FC<Props> = ({ workOrder, onRefresh }) => {
         >
           <View style={{ alignItems: "center" }}>
             <Text style={styles.sectionTitle}>FIRMA TÈCNIC</Text>
-            {workOrder.workerSignature && (
+            {workOrder.workerSign && (
               <Image
-                source={{ uri: workOrder.workerSignature }}
+                source={{ uri: workOrder.workerSign }}
                 style={{ width: 150, height: 100 }}
                 resizeMode="contain"
               />
@@ -265,9 +265,9 @@ export const WorkOrderForm: React.FC<Props> = ({ workOrder, onRefresh }) => {
 
           <View style={{ alignItems: "center" }}>
             <Text style={styles.sectionTitle}>FIRMA CLIENT</Text>
-            {workOrder.clientSignature && (
+            {workOrder.customerSign && (
               <Image
-                source={{ uri: workOrder.clientSignature }}
+                source={{ uri: workOrder.customerSign }}
                 style={{ width: 150, height: 100 }}
                 resizeMode="contain"
               />

@@ -84,7 +84,9 @@ export default function WorkOrderDetail() {
     try {
       if (!isLoading) setLoading(true);
       const data = await fetchById(workOrderId);
+
       setWorkOrder(data);
+
       setInspectionPoints(data.workOrderInspectionPoint ?? []);
       setWorkerTimes(data.workOrderOperatorTimes ?? []);
       setActiveTab(
@@ -154,22 +156,29 @@ export default function WorkOrderDetail() {
     if (SIGNATURE_TYPES.WORKER === signatureType) {
       setWorkOrder((prev) => ({
         ...prev,
-        workerSignature: signature,
+        workerSign: signature,
       }));
       setSignatureType(SIGNATURE_TYPES.CLIENT);
     } else if (SIGNATURE_TYPES.CLIENT === signatureType) {
       setWorkOrder((prev) => ({
         ...prev,
-        clientSignature: signature,
+        customerSign: signature,
       }));
-      if (workOrder.workerSignature) {
+      if (workOrder.workerSign) {
         await updateWorkOrderSign({
           workOrderId: workOrder.id,
-          workerSign: workOrder.workerSignature,
+          workerSign: workOrder.workerSign,
           customerSign: signature,
         });
       }
       setSignatureType(SIGNATURE_TYPES.UNDEFINED);
+      Alert.alert("Ok", "Firma actualizada", [
+        {
+          text: "OK",
+          onPress: () => router.push("/workorders"),
+          style: "default",
+        },
+      ]);
     }
   };
 
@@ -184,7 +193,7 @@ export default function WorkOrderDetail() {
     router.push("/workorders");
   };
 
-  const confirmFinish = async (continueWorkOrder = false) => {
+  const confirmFinish = async () => {
     setLoadingConfirming(true);
     try {
       if (!workOrder) return;
@@ -196,7 +205,7 @@ export default function WorkOrderDetail() {
         },
       ]);
 
-      if (!continueWorkOrder) {
+      if (attachments.length > 0 || commentText) {
         const files = attachments.map((uri) => ({
           uri,
           name: uri.split("/").pop() || "file",
@@ -254,7 +263,8 @@ export default function WorkOrderDetail() {
     } finally {
       setLoadingConfirming(false);
       setShowNotFinishedModal(false);
-      router.push("/workorders");
+      //Alert.alert("Actualizat correctament", "Ordre No Finalitzada");
+      setSignatureType(SIGNATURE_TYPES.WORKER);
     }
   };
 
@@ -263,7 +273,6 @@ export default function WorkOrderDetail() {
   }
 
   function handleRemoveTime(id: string) {
-    console.log("Removing time:", id);
     setWorkerTimes(workerTimes.filter((t) => t.id !== id));
   }
 
@@ -290,22 +299,25 @@ export default function WorkOrderDetail() {
         {workOrder && (
           <>
             {/* Botón No Finalizada solo si isCRM */}
-            {isCRM && workOrder.stateWorkOrder !== StateWorkOrder.Finished && (
-              <TouchableOpacity
-                onPress={() => handleUpdateState(StateWorkOrder.NotFinished)}
-                style={[
-                  theme.commonStyles.finishButton,
-                  { backgroundColor: theme.colors.error, marginRight: 8 },
-                ]}
-              >
-                <Ionicons name="close" size={24} color="#fff" />
-              </TouchableOpacity>
-            )}
+            {isCRM &&
+              workOrder.stateWorkOrder !== StateWorkOrder.Finished &&
+              workOrder.stateWorkOrder !== StateWorkOrder.NotFinished && (
+                <TouchableOpacity
+                  onPress={() => handleUpdateState(StateWorkOrder.NotFinished)}
+                  style={[
+                    theme.commonStyles.finishButton,
+                    { backgroundColor: theme.colors.error, marginRight: 8 },
+                  ]}
+                >
+                  <Ionicons name="close" size={24} color="#fff" />
+                </TouchableOpacity>
+              )}
             {/* Botón Finalizar/Reabrir */}
             <TouchableOpacity
               onPress={() =>
                 handleUpdateState(
-                  workOrder.stateWorkOrder === StateWorkOrder.Finished
+                  workOrder.stateWorkOrder === StateWorkOrder.Finished ||
+                    workOrder.stateWorkOrder === StateWorkOrder.NotFinished
                     ? StateWorkOrder.Waiting
                     : StateWorkOrder.Finished
                 )
@@ -314,7 +326,8 @@ export default function WorkOrderDetail() {
             >
               <Ionicons
                 name={
-                  workOrder.stateWorkOrder === StateWorkOrder.Finished
+                  workOrder.stateWorkOrder === StateWorkOrder.Finished ||
+                  workOrder.stateWorkOrder === StateWorkOrder.NotFinished
                     ? "refresh"
                     : "checkmark-done"
                 }
@@ -322,17 +335,19 @@ export default function WorkOrderDetail() {
                 color="#fff"
               />
             </TouchableOpacity>
-            {isCRM && workOrder.stateWorkOrder == StateWorkOrder.Finished && (
-              <TouchableOpacity
-                style={[
-                  theme.commonStyles.finishButton,
-                  { backgroundColor: theme.colors.warning },
-                ]}
-                onPress={() => setSignatureType(SIGNATURE_TYPES.WORKER)}
-              >
-                <Ionicons name="create" size={24} color="#fff" />
-              </TouchableOpacity>
-            )}
+            {isCRM &&
+              (workOrder.stateWorkOrder == StateWorkOrder.Finished ||
+                workOrder.stateWorkOrder == StateWorkOrder.NotFinished) && (
+                <TouchableOpacity
+                  style={[
+                    theme.commonStyles.finishButton,
+                    { backgroundColor: theme.colors.warning },
+                  ]}
+                  onPress={() => setSignatureType(SIGNATURE_TYPES.WORKER)}
+                >
+                  <Ionicons name="create" size={24} color="#fff" />
+                </TouchableOpacity>
+              )}
           </>
         )}
       </View>
@@ -494,21 +509,6 @@ export default function WorkOrderDetail() {
                   />
                 )}
               </TouchableOpacity>
-
-              {/* Continuar */}
-              <TouchableOpacity
-                style={[
-                  theme.commonStyles.modalBtn,
-                  { backgroundColor: theme.colors.success },
-                ]}
-                onPress={() => confirmFinish(true)}
-              >
-                <MaterialIcons
-                  name="arrow-forward"
-                  size={24}
-                  color={theme.colors.white}
-                />
-              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -569,7 +569,11 @@ export default function WorkOrderDetail() {
                 ]}
                 onPress={() => setShowNotFinishedModal(false)}
               >
-                <Ionicons name="close-circle" size={24} color="#fff" />
+                <MaterialIcons
+                  name="close"
+                  size={24}
+                  color={theme.colors.white}
+                />
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
@@ -578,7 +582,11 @@ export default function WorkOrderDetail() {
                 ]}
                 onPress={confirmNotFinished}
               >
-                <Ionicons name="checkmark-circle" size={24} color="#fff" />
+                <MaterialIcons
+                  name="check"
+                  size={24}
+                  color={theme.colors.white}
+                />
               </TouchableOpacity>
             </View>
           </View>

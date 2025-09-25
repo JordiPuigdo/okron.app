@@ -434,35 +434,41 @@ export const SparePartsSection = ({
               )}
             </Text>
 
-            {/* Contador de cantidad mejorado */}
+            {/* Input de cantidad mejorado */}
             <View style={modalStyles.quantityContainer}>
               <Text style={modalStyles.quantityLabel}>Quantitat:</Text>
 
-              <View style={modalStyles.quantityControls}>
+              <TextInput
+                style={modalStyles.quantityInput}
+                value={quantity}
+                onChangeText={setQuantity}
+                keyboardType="number-pad"
+                autoFocus={true}
+                selectTextOnFocus={true}
+                placeholder="0"
+                maxLength={6}
+              />
+
+              {/* Botones de ajuste rápido opcionales */}
+              <View style={modalStyles.quickAdjustContainer}>
                 <TouchableOpacity
-                  style={modalStyles.quantityButton}
+                  style={modalStyles.quickAdjustButton}
                   onPress={() => {
-                    const newValue = Math.max(parseInt(quantity || "1") - 1, 1);
-                    setQuantity(newValue.toString());
+                    const currentValue = parseInt(quantity || "0");
+                    setQuantity(Math.max(currentValue - 10, 1).toString());
                   }}
-                  activeOpacity={0.7}
                 >
-                  <Ionicons name="remove" size={32} color="#fff" />
+                  <Text style={modalStyles.quickAdjustText}>-10</Text>
                 </TouchableOpacity>
 
-                <View style={modalStyles.quantityDisplay}>
-                  <Text style={modalStyles.quantityText}>{quantity}</Text>
-                </View>
-
                 <TouchableOpacity
-                  style={modalStyles.quantityButton}
+                  style={modalStyles.quickAdjustButton}
                   onPress={() => {
-                    const newValue = parseInt(quantity || "1") + 1;
-                    setQuantity(newValue.toString());
+                    const currentValue = parseInt(quantity || "0");
+                    setQuantity((currentValue + 10).toString());
                   }}
-                  activeOpacity={0.7}
                 >
-                  <Ionicons name="add" size={32} color="#fff" />
+                  <Text style={modalStyles.quickAdjustText}>+10</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -480,9 +486,10 @@ export const SparePartsSection = ({
                 style={[modalStyles.actionButton, modalStyles.confirmButton]}
                 onPress={confirmModal}
                 activeOpacity={0.7}
+                disabled={isLoading}
               >
                 {isLoading ? (
-                  <ActivityIndicator size="large" color={theme.colors.white} />
+                  <ActivityIndicator size="small" color={theme.colors.white} />
                 ) : (
                   <Ionicons
                     name={modalType === "consume" ? "checkmark" : "refresh"}
@@ -526,40 +533,43 @@ const modalStyles = StyleSheet.create({
   },
   quantityContainer: {
     marginBottom: 30,
+    alignItems: "center",
   },
   quantityLabel: {
     fontSize: 16,
     color: theme.colors.textSecondary,
-    marginBottom: 10,
+    marginBottom: 15,
     textAlign: "center",
   },
-  quantityControls: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  quantityButton: {
-    width: 60,
+  quantityInput: {
+    width: "80%",
     height: 60,
-    borderRadius: 30,
-    backgroundColor: theme.colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 3,
-  },
-  quantityDisplay: {
-    width: 100,
-    height: 60,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f5f5f5",
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
     borderRadius: 10,
-    marginHorizontal: 10,
-  },
-  quantityText: {
+    textAlign: "center",
     fontSize: 28,
     fontWeight: "bold",
     color: theme.colors.text,
+    marginBottom: 15,
+    paddingHorizontal: 15,
+  },
+  quickAdjustContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 10,
+  },
+  quickAdjustButton: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    backgroundColor: theme.colors.background,
+    borderRadius: 8,
+    marginHorizontal: 10,
+  },
+  quickAdjustText: {
+    color: theme.colors.text,
+    fontSize: 14,
+    fontWeight: "500",
   },
   actionButtons: {
     flexDirection: "row",
@@ -567,26 +577,18 @@ const modalStyles = StyleSheet.create({
     marginTop: 10,
   },
   actionButton: {
-    flex: 1,
-    flexDirection: "row",
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 15,
-    borderRadius: 10,
-    marginHorizontal: 5,
-    elevation: 2,
+    elevation: 3,
   },
   cancelButton: {
     backgroundColor: theme.colors.error,
   },
   confirmButton: {
     backgroundColor: theme.colors.success,
-  },
-  actionButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "600",
-    marginLeft: 10,
   },
 });
 

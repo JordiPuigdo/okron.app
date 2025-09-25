@@ -13,6 +13,7 @@ export interface WorkOrder extends BaseModel {
   code: string;
   description: string;
   startTime: Date;
+  creationTime: Date;
   endTime: Date;
   stateWorkOrder: StateWorkOrder;
   workOrderType: WorkOrderType;
@@ -35,8 +36,8 @@ export interface WorkOrder extends BaseModel {
   visibleReport?: boolean;
   customerWorkOrder?: CustomerWorkOrder;
   refCustomerId?: string;
-  workerSignature?: string;
-  clientSignature?: string;
+  workerSign?: string;
+  customerSign?: string;
 }
 
 export enum WorkOrderType {

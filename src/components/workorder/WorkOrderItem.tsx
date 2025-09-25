@@ -83,7 +83,7 @@ export const WorkOrderItem = ({ workOrder, onPress }: Props) => {
           {workOrder.asset?.code ?? ""} - {workOrder.asset?.description ?? ""}
         </Text>
         <Text style={theme.commonStyles.subtitle}>
-          {dayjs(workOrder.startTime).format("DD/MM/YYYY")}
+          {dayjs(workOrder.creationTime).format("DD/MM/YYYY")}
         </Text>
       </View>
       <View style={theme.commonStyles.rightContainer}>

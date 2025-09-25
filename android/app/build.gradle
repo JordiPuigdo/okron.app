@@ -83,11 +83,9 @@ def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
 android {
     ndkVersion rootProject.ext.ndkVersion
-
+    namespace "com.jordi.puigdo.myokronapp"
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
-
-    namespace 'com.jordi.puigdo.myokronapp'
     defaultConfig {
         applicationId 'com.jordi.puigdo.myokronapp'
         minSdkVersion rootProject.ext.minSdkVersion
