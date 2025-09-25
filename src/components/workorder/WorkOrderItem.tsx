@@ -136,7 +136,7 @@ const WorkOrderItemCRM = ({ workOrder, onPress }: Props) => {
         {getIcon(workOrder)}
         <Text style={theme.commonStyles.subtitle}>
           Client: {workOrder.customerWorkOrder.customerName} -{" "}
-          {dayjs(workOrder.startTime).format("DD/MM/YYYY")}
+          {dayjs(workOrder.creationTime).format("DD/MM/YYYY")}
         </Text>
         <Pressable
           onPress={(e) => {
