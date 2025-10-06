@@ -137,12 +137,12 @@ export default function WorkOrderDetail() {
   };
 
   const handleUpdateState = (state: StateWorkOrder) => {
+    console.log("handleUpdateState", state);
     if (state === StateWorkOrder.Finished && isCRM) {
       if (workOrder.workOrderComments.length === 0) {
         Alert.alert("Error", "Descripció de la reparació incompleta");
         return;
       }
-
       setShowFinishModal(true);
     } else if (state === StateWorkOrder.NotFinished && isCRM) {
       setShowNotFinishedModal(true);
@@ -183,6 +183,7 @@ export default function WorkOrderDetail() {
   };
 
   const updateSimpleState = async (state: StateWorkOrder) => {
+    console.log(workOrder);
     if (!workOrder) return;
     const payload: UpdateStateWorkOrder = {
       workOrderId: workOrder.id,
@@ -223,7 +224,9 @@ export default function WorkOrderDetail() {
         }
       }
       setShowFinishModal(false);
-      setSignatureType(SIGNATURE_TYPES.WORKER);
+      if (workOrder.workerSign == null) {
+        setSignatureType(SIGNATURE_TYPES.WORKER);
+      }
     } catch (error) {
       console.error(error);
     } finally {

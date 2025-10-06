@@ -42,18 +42,8 @@ export const useWorkOrders = () => {
     type: WorkOrderType = WorkOrderType.Corrective
   ): Promise<string> => {
     try {
-      const count = await workOrderService.countByWorkOrderType(type);
-      const nextNumber = count + 1;
-      const padded = nextNumber.toString().padStart(4, "0");
-
-      const prefix =
-        type === WorkOrderType.Corrective
-          ? "COR"
-          : type === WorkOrderType.Preventive
-          ? "PRE"
-          : "OT";
-
-      return `${prefix}${padded}`;
+      const workOrderCode = await workOrderService.generateWorkOrderCode(type);
+      return workOrderCode;
     } catch (error) {
       console.error("Error generating work order code:", error);
       throw error;
@@ -124,6 +114,7 @@ export const useWorkOrders = () => {
     data: AddWorkOrderOperatorTimes
   ): Promise<AddWorkOrderOperatorTimes> => {
     try {
+      console.log("addWorkOrderOperatorTimes", data);
       const response = await workOrderService.addWorkOrderOperatorTimes(data);
       return response!;
     } catch (error) {

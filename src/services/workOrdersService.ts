@@ -56,9 +56,9 @@ class WorkOrderService {
     }
   }
 
-  async countByWorkOrderType(workOrderType: WorkOrderType): Promise<number> {
+  async generateWorkOrderCode(workOrderType: WorkOrderType): Promise<string> {
     try {
-      const url = `${this.API}CountByWorkOrderType?type=${workOrderType}`;
+      const url = `${this.API}workOrder/GenerateWorkOrderCode?workOrderType=${workOrderType}`;
       const response = await fetch(url, {
         method: "GET",
         headers: {
@@ -67,12 +67,14 @@ class WorkOrderService {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to CountByWorkOrderType`);
+        throw new Error("Failed to fetch GenerateWorkOrderCode");
       }
-
-      return parseInt(await response.text(), 10);
+      if (response.status === 204) {
+        return "";
+      }
+      return response.text();
     } catch (error) {
-      console.error("Error CountByWorkOrderType:", error);
+      console.error("Error fetching GenerateWorkOrderCode:", error);
       throw error;
     }
   }

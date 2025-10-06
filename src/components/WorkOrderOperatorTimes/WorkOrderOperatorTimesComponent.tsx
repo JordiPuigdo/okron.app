@@ -169,6 +169,7 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
         workOrderId: workOrderId,
         startTime: time.startTime,
         endTime: time.endTime,
+        type: time.type,
         workOrderOperatorTimesId: time.id,
       });
       safeUpdateState(StateWorkOrder.Paused);
@@ -210,6 +211,7 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
       workOrderId: workOrderId,
       startTime: start,
       endTime: end,
+      type: timeType,
       workOrderOperatorTimesId: newRecord.id,
     });
 

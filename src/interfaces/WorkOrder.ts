@@ -168,6 +168,7 @@ export interface UpdateWorkOrderOperatorTimes {
   workOrderId: string;
   startTime: Date;
   endTime?: Date;
+  type: WorkOrderTimeType;
   workOrderOperatorTimesId: string;
 }
 
