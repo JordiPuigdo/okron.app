@@ -15,7 +15,6 @@ import {
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { theme } from "styles/theme";
-import WorkersTimeModal from "./WorkersTimeModal";
 
 interface Props {
   workorder: WorkOrder;
@@ -156,11 +155,11 @@ export const WorkOrderWorkersComponent: React.FC<Props> = ({
         )}
       </View>
 
-      <WorkersTimeModal
+      {/*  <WorkersTimeModal
         operatorId={modalVisible}
         workorder={workorder}
         setOperatorId={handleClose}
-      />
+      />*/}
     </KeyboardAwareScrollView>
   );
 };

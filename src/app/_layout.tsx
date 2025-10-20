@@ -1,127 +1,120 @@
-import { Ionicons } from "@expo/vector-icons";
+import { HeaderButton } from "@components/ui/HeaderButton";
+import { configService } from "@services/configService";
 import { useAuthStore } from "@store/authStore";
 import { Stack, useRouter } from "expo-router";
 import React, { useEffect } from "react";
-import { StatusBar, TouchableOpacity, View } from "react-native";
+import { StatusBar, StyleSheet } from "react-native";
 import { colors } from "styles/colors";
-
-import { configService } from "@services/configService";
-import { theme } from "styles/theme";
 
 export default function RootLayout() {
   const { logout } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
-    console.log("Cargando configuración...");
     configService.loadConfig();
   }, []);
 
   return (
     <>
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor={colors.placeholderText}
-      />
+      <StatusBar barStyle="light-content" backgroundColor={colors.industrial} />
       <Stack
         screenOptions={({ navigation }) => ({
           headerStyle: {
-            backgroundColor: colors.primary,
+            backgroundColor: colors.industrial,
             elevation: 4,
             height: 100,
-            shadowOpacity: 0,
+            shadowOpacity: 0.1,
             borderBottomWidth: 0,
           },
           headerTintColor: "#fff",
           headerTitleStyle: {
-            fontWeight: "bold",
-            fontSize: 18,
+            fontWeight: "700",
+            fontSize: 20,
+            letterSpacing: 0.5,
           },
           headerTitleAlign: "center",
           headerBackTitleVisible: false,
+
           headerLeft: ({ canGoBack }) =>
             canGoBack ? (
-              <TouchableOpacity
+              <HeaderButton
+                icon="arrow-back-outline"
+                color="#dfe4ea"
                 onPress={() => navigation.goBack()}
-                style={theme.commonStyles.largeBackButton}
-              >
-                <View style={theme.commonStyles.backButtonContent}>
-                  <Ionicons name="arrow-back" size={40} color="#fff" />
-                </View>
-              </TouchableOpacity>
+              />
             ) : null,
         })}
       >
         <Stack.Screen
           name="index"
           options={{
-            title: "Okron",
-            headerBackTitle: "Atrás",
+            title: "Okron - GMAO",
+            headerBackVisible: false,
             headerLeft: () => null,
             headerRight: () => null,
-            headerBackVisible: false,
           }}
         />
 
         <Stack.Screen
           name="workorders/index"
-          options={({ navigation }) => ({
+          options={{
             title: "Ordres de treball",
+            headerBackVisible: false,
+
+            headerLeft: () => (
+              <HeaderButton
+                icon="add-circle-outline"
+                color="#28a745"
+                onPress={() => router.push("/new/repairReportForm")}
+              />
+            ),
+
             headerRight: () => (
-              <TouchableOpacity
+              <HeaderButton
+                icon="power"
+                color="#ff4d4d"
                 onPress={() => {
                   logout();
                   router.push("/");
                 }}
-                style={{
-                  marginRight: 20,
-                  padding: 12,
-                  minWidth: 60,
-                  minHeight: 60,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  borderRadius: 12,
-                  backgroundColor: "#ffffff22",
-                }}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <View style={theme.commonStyles.backButtonContent}>
-                  <Ionicons name="log-out-outline" size={40} color="#fff" />
-                </View>
-              </TouchableOpacity>
+              />
             ),
-            headerBackVisible: false,
-            headerLeft: () => (
-              <TouchableOpacity
-                onPress={() => {
-                  router.push("/new/repairReportForm");
-                }}
-                style={{
-                  marginLeft: 20,
-                  padding: 12,
-                  minWidth: 60,
-                  minHeight: 60,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  borderRadius: 12,
-                  backgroundColor: "#ffffff22",
-                }}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <View style={theme.commonStyles.backButtonContent}>
-                  <Ionicons name="create" size={40} color="#fff" />
-                </View>
-              </TouchableOpacity>
-            ),
-          })}
+          }}
         />
+
+        <Stack.Screen
+          name="workorders/[id]"
+          options={{
+            title: "Detall de l'ordre",
+          }}
+        />
+
         <Stack.Screen
           name="new/repairReportForm"
-          options={({ navigation }) => ({
-            title: "Nou Parte",
-          })}
+          options={{
+            title: "Nova Ordre",
+          }}
         />
       </Stack>
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  iconButton: {
+    paddingVertical: 18, // ⬆️ más aire arriba y abajo (antes 14 o 16)
+    paddingHorizontal: 20,
+    minWidth: 72,
+    minHeight: 72,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 16,
+    backgroundColor: "#ffffff25",
+  },
+  iconLeft: {
+    marginLeft: 16,
+  },
+  iconRight: {
+    marginRight: 16,
+  },
+});

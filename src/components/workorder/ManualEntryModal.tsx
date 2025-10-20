@@ -2,8 +2,7 @@ import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
 import React, { useState } from "react";
-import { Modal, Text, TouchableOpacity, View } from "react-native";
-import { theme } from "styles/theme";
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface Props {
   visible: boolean;
@@ -45,7 +44,6 @@ export const ManualEntryModal: React.FC<Props> = ({
     switch (showPicker.type) {
       case "startDate":
         setStartDate((prev) => {
-          // Crear una NUEVA fecha combinando la fecha seleccionada con la hora actual
           const newDate = new Date(selectedDate);
           newDate.setHours(prev.getHours(), prev.getMinutes());
           return newDate;
@@ -54,7 +52,6 @@ export const ManualEntryModal: React.FC<Props> = ({
 
       case "startTime":
         setStartDate((prev) => {
-          // Crear una NUEVA fecha combinando la fecha actual con la hora seleccionada
           const newDate = new Date(prev);
           newDate.setHours(selectedDate.getHours(), selectedDate.getMinutes());
           return newDate;
@@ -63,7 +60,6 @@ export const ManualEntryModal: React.FC<Props> = ({
 
       case "endDate":
         setEndDate((prev) => {
-          // Crear una NUEVA fecha combinando la fecha seleccionada con la hora actual
           const newDate = new Date(selectedDate);
           newDate.setHours(prev.getHours(), prev.getMinutes());
           return newDate;
@@ -72,7 +68,6 @@ export const ManualEntryModal: React.FC<Props> = ({
 
       case "endTime":
         setEndDate((prev) => {
-          // Crear una NUEVA fecha combinando la fecha actual con la hora seleccionada
           const newDate = new Date(prev);
           newDate.setHours(selectedDate.getHours(), selectedDate.getMinutes());
           return newDate;
@@ -85,83 +80,152 @@ export const ManualEntryModal: React.FC<Props> = ({
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View style={theme.commonStyles.overlay}>
-        <View style={theme.commonStyles.manualEntryContainer}>
-          <Text style={theme.commonStyles.title}>Entrada Manual</Text>
+      <View style={styles.overlay}>
+        <View style={styles.container}>
+          <Text style={styles.title}>Entrada manual</Text>
 
-          <View style={theme.commonStyles.timeRow}>
-            {/* FECHA INICIO */}
+          {/* --- Bloque de inicio --- */}
+          <View style={styles.row}>
             <TouchableOpacity
               onPress={() => showDateTimePicker("startDate")}
-              style={theme.commonStyles.timeButton}
+              style={styles.timeButton}
             >
-              <FontAwesome5 name="calendar-plus" size={40} color="#007bff" />
-              <Text style={theme.commonStyles.dateText}>
+              <FontAwesome5 name="calendar-plus" size={30} color="#0d8de0" />
+              <Text style={styles.timeText}>
                 {dayjs(startDate).format("DD/MM")}
               </Text>
             </TouchableOpacity>
 
-            {/* HORA INICIO */}
             <TouchableOpacity
               onPress={() => showDateTimePicker("startTime")}
-              style={theme.commonStyles.timeButton}
+              style={styles.timeButton}
             >
-              <FontAwesome5 name="play-circle" size={40} color="#28a745" />
-              <Text style={theme.commonStyles.dateText}>
+              <MaterialIcons name="play-arrow" size={34} color="#28a745" />
+              <Text style={styles.timeText}>
                 {dayjs(startDate).format("HH:mm")}
               </Text>
             </TouchableOpacity>
           </View>
 
-          <View style={theme.commonStyles.timeRow}>
-            {/* FECHA FIN */}
+          {/* --- Bloque de fin --- */}
+          <View style={styles.row}>
             <TouchableOpacity
               onPress={() => showDateTimePicker("endDate")}
-              style={theme.commonStyles.timeButton}
+              style={styles.timeButton}
             >
-              <FontAwesome5 name="calendar-check" size={40} color="#007bff" />
-              <Text style={theme.commonStyles.dateText}>
+              <FontAwesome5 name="calendar-check" size={30} color="#0d8de0" />
+              <Text style={styles.timeText}>
                 {dayjs(endDate).format("DD/MM")}
               </Text>
             </TouchableOpacity>
 
-            {/* HORA FIN */}
             <TouchableOpacity
               onPress={() => showDateTimePicker("endTime")}
-              style={theme.commonStyles.timeButton}
+              style={styles.timeButton}
             >
-              <FontAwesome5 name="stop-circle" size={40} color="#dc3545" />
-              <Text style={theme.commonStyles.dateText}>
+              <MaterialIcons name="stop" size={34} color="#dc3545" />
+              <Text style={styles.timeText}>
                 {dayjs(endDate).format("HH:mm")}
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
 
-        {showPicker.type !== null && (
-          <DateTimePicker
-            mode={showPicker.type.includes("Date") ? "date" : "time"}
-            value={showPicker.type.startsWith("start") ? startDate : endDate}
-            onChange={onChangeDate}
-          />
-        )}
+          {/* --- DateTime Picker --- */}
+          {showPicker.type !== null && (
+            <DateTimePicker
+              mode={showPicker.type.includes("Date") ? "date" : "time"}
+              value={showPicker.type.startsWith("start") ? startDate : endDate}
+              onChange={onChangeDate}
+            />
+          )}
 
-        <View style={theme.commonStyles.buttonsRow}>
-          <TouchableOpacity
-            style={theme.commonStyles.cancelButton}
-            onPress={onClose}
-          >
-            <MaterialIcons name="close" size={22} color="white" />
-          </TouchableOpacity>
+          {/* --- Botones inferiores --- */}
+          <View style={styles.actions}>
+            <TouchableOpacity
+              style={[styles.button, styles.cancel]}
+              onPress={onClose}
+            >
+              <MaterialIcons name="close" size={22} color="#fff" />
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={theme.commonStyles.saveButton}
-            onPress={handleSave}
-          >
-            <FontAwesome5 name="save" size={20} color="white" />
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.save]}
+              onPress={handleSave}
+            >
+              <FontAwesome5 name="save" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  container: {
+    width: "88%",
+    backgroundColor: "#f3f4f6",
+    borderRadius: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  title: {
+    textAlign: "center",
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: 16,
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-evenly",
+    marginBottom: 12,
+  },
+  timeButton: {
+    backgroundColor: "#e1e5eb",
+    width: 110,
+    height: 90,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
+  },
+  timeText: {
+    marginTop: 6,
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#374151",
+  },
+  actions: {
+    flexDirection: "row",
+    justifyContent: "space-evenly",
+    marginTop: 14,
+  },
+  button: {
+    width: 100,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cancel: {
+    backgroundColor: "#6c757d",
+  },
+  save: {
+    backgroundColor: "#0d8de0",
+  },
+});

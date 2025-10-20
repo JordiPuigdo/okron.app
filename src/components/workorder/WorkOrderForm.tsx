@@ -5,6 +5,7 @@ import {
   WorkOrderCommentType,
   WorkOrderTimeType,
 } from "@interfaces/WorkOrder";
+import { configService } from "@services/configService";
 import dayjs from "dayjs";
 import React from "react";
 import {
@@ -16,6 +17,7 @@ import {
   View,
 } from "react-native";
 import { theme } from "styles/theme";
+import { WorkOrderSummary } from "./WorkOrderSummary";
 
 interface Props {
   workOrder?: WorkOrder;
@@ -31,16 +33,18 @@ const getInstallationAddress = (workOrder: WorkOrder) => {
 
 export const WorkOrderForm: React.FC<Props> = ({ workOrder, onRefresh }) => {
   const [refreshing, setRefreshing] = React.useState(false);
+  const { isCRM } = configService.getConfigSync();
 
   const handleRefresh = React.useCallback(() => {
     setRefreshing(true);
-    onRefresh?.(); // Llama a la función de refresh proporcionada por props
-
-    // Simula un tiempo de carga (opcional, puedes quitarlo si tu onRefresh maneja su propio estado)
+    onRefresh?.();
     setTimeout(() => {
       setRefreshing(false);
     }, 1000);
   }, [onRefresh]);
+
+  if (!isCRM) return <WorkOrderSummary workOrder={workOrder} />;
+
   return (
     <ScrollView
       style={styles.scrollContainer}
@@ -49,10 +53,9 @@ export const WorkOrderForm: React.FC<Props> = ({ workOrder, onRefresh }) => {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={handleRefresh}
-          // Opciones adicionales de personalización:
-          colors={[theme.colors.primary]} // Color del spinner (Android)
-          tintColor={theme.colors.primary} // Color del spinner (iOS)
-          progressBackgroundColor="#ffffff" // Fondo del spinner
+          colors={[theme.colors.primary]}
+          tintColor={theme.colors.primary}
+          progressBackgroundColor="#ffffff"
         />
       }
     >
@@ -112,7 +115,7 @@ export const WorkOrderForm: React.FC<Props> = ({ workOrder, onRefresh }) => {
             <View style={styles.column}>
               <Text style={styles.label}>Data</Text>
               <Text style={styles.value}>
-                {dayjs(workOrder.startTime).format("DD/MM/YYYY")}
+                {dayjs(workOrder.creationTime).format("DD/MM/YYYY")}
               </Text>
             </View>
 
@@ -217,10 +220,9 @@ export const WorkOrderForm: React.FC<Props> = ({ workOrder, onRefresh }) => {
         </View>
 
         {/* NOM TÈCNICS */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>NOM TÈCNICS</Text>
+        <Section title="NOM TÈCNICS">
           <Text>{workOrder.operator.map((o) => o.name).join(", ")}</Text>
-        </View>
+        </Section>
 
         {workOrder.stateWorkOrder === StateWorkOrder.NotFinished && (
           <View style={styles.section}>
@@ -235,14 +237,13 @@ export const WorkOrderForm: React.FC<Props> = ({ workOrder, onRefresh }) => {
         )}
 
         {workOrder.stateWorkOrder === StateWorkOrder.Finished && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>OBSERVACIONS</Text>
+          <Section title="OBSERVACIONS">
             <Text>
               {workOrder.workOrderComments
                 .filter((x) => x.type == WorkOrderCommentType.Internal)
                 .map((x) => x.comment)}
             </Text>
-          </View>
+          </Section>
         )}
 
         <View
@@ -317,6 +318,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 8,
+    gap: 12,
   },
   column: {
     flex: 1,
@@ -370,5 +372,37 @@ const styles = StyleSheet.create({
   compactText: {
     fontSize: 16,
     color: theme.colors.text,
+  },
+});
+
+const Section = ({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) => (
+  <View style={stylesSection.sectionContainer}>
+    <Text style={stylesSection.sectionHeader}>{title}</Text>
+    <View style={stylesSection.sectionContent}>{children}</View>
+  </View>
+);
+
+const stylesSection = StyleSheet.create({
+  sectionContainer: {
+    backgroundColor: "#f4f7fa", // gris industrial claro
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 16,
+  },
+  sectionHeader: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#1a1a1a",
+    marginBottom: 8,
+  },
+  sectionContent: {
+    paddingLeft: 4,
   },
 });

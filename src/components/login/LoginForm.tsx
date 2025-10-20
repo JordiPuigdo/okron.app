@@ -4,11 +4,7 @@ import React, { useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { theme } from "styles/theme";
 
-interface Props {
-  onLogin: (username: string) => Promise<boolean>;
-}
-
-export const LoginForm = ({ onLogin }: Props) => {
+export const LoginForm = () => {
   const [username, setUsername] = useState("");
   const { login, loading, error } = useLogin();
 
@@ -18,7 +14,7 @@ export const LoginForm = ({ onLogin }: Props) => {
     if (username.length === 0) {
       return;
     }
-    onLogin(username);
+
     const response = await login(username);
     if (response) {
       router.push("/workorders");
@@ -41,7 +37,7 @@ export const LoginForm = ({ onLogin }: Props) => {
 
       <TouchableOpacity
         style={[
-          theme.commonStyles.primaryButton,
+          theme.commonStyles.industrialButton,
           loading && theme.commonStyles.disabledButton,
         ]}
         onPress={onSubmit}

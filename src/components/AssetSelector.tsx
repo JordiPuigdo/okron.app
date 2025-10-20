@@ -23,15 +23,23 @@ const AssetSelector = ({
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
 
   useEffect(() => {
-    if (searchQuery.length > 0) {
-      const filtered = assets.filter(
-        (asset) =>
-          asset.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          asset.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+    if (searchQuery.trim().length > 0) {
+      const terms = searchQuery
+        .toLowerCase()
+        .split(" ")
+        .filter((t) => t.trim() !== "");
+
+      const filtered = assets.filter((asset) => {
+        const searchable = `${asset.code} ${asset.brand ?? ""} ${
+          asset.description
+        }`.toLowerCase();
+
+        return terms.every((term) => searchable.includes(term));
+      });
+
       setFilteredAssets(filtered);
     } else {
-      setFilteredAssets(assets.slice(0, 20)); // Mostrar solo los primeros 20 por defecto
+      setFilteredAssets(assets.slice(0, 20));
     }
   }, [searchQuery, assets]);
 
@@ -44,8 +52,6 @@ const AssetSelector = ({
 
   return (
     <View style={styles.inputContainer}>
-      <Text style={styles.label}>{isCRM ? "Objecte" : "Equip"}</Text>
-
       {/* Input que activa el modal */}
       <TouchableOpacity
         style={styles.selectorInput}
@@ -99,7 +105,9 @@ const AssetSelector = ({
                 style={styles.assetItem}
                 onPress={() => handleSelectAsset(item)}
               >
-                <Text style={styles.assetCode}>{item.code}</Text>
+                <Text style={styles.assetCode}>
+                  {item.code} {item.brand ? "- " + item.brand : ""}
+                </Text>
                 <Text style={styles.assetDescription}>{item.description}</Text>
               </TouchableOpacity>
             )}

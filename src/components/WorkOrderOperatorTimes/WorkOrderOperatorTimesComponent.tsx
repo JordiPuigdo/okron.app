@@ -52,7 +52,7 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
     isCRM ? WorkOrderTimeType.Travel : WorkOrderTimeType.Time
   );
   const currentWorkerId =
-    workerId ?? useAuthStore.getState().factoryWorker.id.toLocaleLowerCase();
+    workerId ?? useAuthStore?.getState().factoryWorker.id.toLocaleLowerCase();
 
   const [isRunning, setIsRunning] = useState<boolean>(
     workerTimes.find(
@@ -129,19 +129,9 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
       },
       type: timeType,
     };
-    console.log("Starting time tracking:", newRecord);
-    /*const newData: AddWorkOrderOperatorTimes = {
-      WorkOrderId: workOrderId,
-      startTime: startTimeRef.current,
-      operatorId: useAuthStore.getState().factoryWorker.id,
-      workOrderOperatorTimesId: newRecord.id,
-    };*/
-
-    //const recordInserted = await addWorkOrderOperatorTimes(newData);
-    updateState(StateWorkOrder.OnGoing);
-
+    await updateState(StateWorkOrder.OnGoing);
     newRecord.id = Math.random().toString();
-    //onCreate(newRecord);
+    onCreate(newRecord);
   };
 
   const handleStop = () => {
@@ -156,7 +146,7 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
     setModalVisible(true);
   };
 
-  const handleFinalize = (operatorId: string) => {
+  const handleFinalize = async (operatorId: string) => {
     const time = workerTimes.find(
       (t) => t.operator.id === operatorId && t.endTime == null
     );
@@ -172,7 +162,7 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
         type: time.type,
         workOrderOperatorTimesId: time.id,
       });
-      safeUpdateState(StateWorkOrder.Paused);
+      await safeUpdateState(StateWorkOrder.Paused);
     }
   };
 
@@ -238,30 +228,25 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
 
   return (
     <View style={theme.commonStyles.timeTrackerContainer}>
-      <View
-        style={[
-          theme.commonStyles.timeTrackerHeader,
-          { flexDirection: "column", gap: 12 },
-        ]}
-      >
-        {/* Tipo de trabajo */}
+      {/* Bloque de botones mejorado */}
+      <View style={styles.controlRow}>
         {isCRM && (
-          <View style={[styles.typeSelectorContainer, { marginBottom: 8 }]}>
+          <>
             <TouchableOpacity
               style={[
-                styles.typeButton,
+                styles.iconButton,
                 timeType === WorkOrderTimeType.Travel &&
-                  styles.typeButtonActive,
+                  styles.activeButtonBlue,
               ]}
               onPress={() => setTimeType(WorkOrderTimeType.Travel)}
               disabled={isRunning}
             >
               <MaterialIcons
                 name="directions-car"
-                size={20}
+                size={22}
                 color={
                   timeType === WorkOrderTimeType.Travel
-                    ? theme.colors.white
+                    ? "#fff"
                     : theme.colors.textSecondary
                 }
               />
@@ -269,72 +254,56 @@ export const WorkOrderOperatorTimesComponent: React.FC<Props> = ({
 
             <TouchableOpacity
               style={[
-                styles.typeButton,
-                timeType === WorkOrderTimeType.Time && styles.typeButtonActive,
+                styles.iconButton,
+                timeType === WorkOrderTimeType.Time && styles.activeButtonBlue,
               ]}
               onPress={() => setTimeType(WorkOrderTimeType.Time)}
               disabled={isRunning}
             >
               <MaterialIcons
-                name="work"
-                size={20}
+                name="build"
+                size={22}
                 color={
                   timeType === WorkOrderTimeType.Time
-                    ? theme.colors.white
+                    ? "#fff"
                     : theme.colors.textSecondary
                 }
               />
             </TouchableOpacity>
-          </View>
+          </>
         )}
 
-        {/* Botones principales */}
-        <View
-          style={{ flexDirection: "row", justifyContent: "center", gap: 12 }}
-        >
-          <TouchableOpacity
-            style={[
-              theme.commonStyles.actionButton,
-              isRunning
-                ? theme.commonStyles.disabledButton
-                : theme.commonStyles.startButton,
-            ]}
-            onPress={handleStart}
-            disabled={isRunning}
-          >
-            <MaterialIcons
-              name="play-arrow"
-              size={28}
-              color={theme.colors.white}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              theme.commonStyles.actionButton,
-              !isRunning
-                ? theme.commonStyles.disabledButton
-                : theme.commonStyles.stopButton,
-            ]}
-            onPress={handleStop}
-            disabled={!isRunning}
-          >
-            <MaterialIcons name="stop" size={28} color={theme.colors.white} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Entrada manual */}
         <TouchableOpacity
           style={[
-            theme.commonStyles.actionButton,
-            theme.commonStyles.manualButton,
-            isRunning && theme.commonStyles.disabledButton,
-            { marginTop: 12 },
+            styles.iconButton,
+            isRunning ? styles.disabledButton : styles.activeButtonGreen,
+          ]}
+          onPress={handleStart}
+          disabled={isRunning}
+        >
+          <MaterialIcons name="play-arrow" size={28} color="#fff" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.iconButton,
+            !isRunning ? styles.disabledButton : styles.activeButtonRed,
+          ]}
+          onPress={handleStop}
+          disabled={!isRunning}
+        >
+          <MaterialIcons name="stop" size={26} color="#fff" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.iconButton,
+            isRunning ? styles.disabledButton : styles.activeButtonGray,
           ]}
           onPress={handleManualEntry}
           disabled={isRunning}
         >
-          <FontAwesome5 name="plus" size={20} color={theme.colors.white} />
+          <FontAwesome5 name="plus" size={18} color="#fff" />
         </TouchableOpacity>
       </View>
 
@@ -399,5 +368,44 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 12,
     color: theme.colors.white,
+  },
+  controlRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f3f4f6", // gris industrial
+    borderRadius: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 14,
+    gap: 12,
+  },
+  iconButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+    backgroundColor: "#e1e5eb",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 1,
+    elevation: 1,
+  },
+  activeButtonBlue: {
+    backgroundColor: "#0d8de0",
+  },
+  activeButtonGreen: {
+    backgroundColor: "#28a745",
+  },
+  activeButtonRed: {
+    backgroundColor: "#dc3545",
+  },
+  activeButtonGray: {
+    backgroundColor: "#6c757d",
+  },
+  disabledButton: {
+    backgroundColor: "#a0a7b3",
   },
 });

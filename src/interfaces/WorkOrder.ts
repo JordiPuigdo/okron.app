@@ -38,6 +38,8 @@ export interface WorkOrder extends BaseModel {
   refCustomerId?: string;
   workerSign?: string;
   customerSign?: string;
+  originalWorkOrderCode?: string;
+  priority?: WorkOrderPriority;
 }
 
 export enum WorkOrderType {
@@ -54,6 +56,13 @@ export interface WorkOrderComment {
   operator: Operator;
   type: WorkOrderCommentType;
   urls?: string[];
+}
+
+export enum WorkOrderPriority {
+  Low = 0,
+  Medium = 1,
+  High = 2,
+  Critical = 3,
 }
 
 export interface WorkOrderSparePart {
@@ -96,6 +105,7 @@ export interface SearchWorkOrderFilters {
 export enum OriginWorkOrder {
   Maintenance,
   Production,
+  Quality,
 }
 
 export enum StateWorkOrder {
@@ -131,6 +141,7 @@ export interface CreateWorkOrderRequest {
   workOrderCreatedId?: string;
   visibleReport?: boolean;
   startTime?: Date;
+  priority?: WorkOrderPriority;
 }
 export interface AddCommentToWorkOrderRequest {
   comment: string;

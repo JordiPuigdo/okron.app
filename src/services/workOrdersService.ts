@@ -118,7 +118,9 @@ class WorkOrderService {
         body: formData,
       });
       if (!response.ok) {
-        throw new Error("Failed to fetch addCommentToWorkOrder");
+        throw new Error(
+          "Failed to fetch addCommentToWorkOrder " + response.json()
+        );
       }
       if (response.status === 204) {
         return {} as WorkOrderComment;

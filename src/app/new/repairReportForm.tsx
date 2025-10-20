@@ -1,7 +1,8 @@
-import AssetSelector from "@components/AssetSelector";
-import CustomerSelector from "@components/CustomerSelector";
-import InstallationSelector from "@components/InstallationSelector";
-import { FontAwesome5 } from "@expo/vector-icons";
+import {
+  getWorkOrderOrigin,
+  getWorkOrderType,
+  getWorkOrderTypeByOriginType,
+} from "@components/workorder/utils";
 import { useAssets } from "@hooks/useAssets";
 import { useCustomers } from "@hooks/useCustomers";
 import { useWorkOrders } from "@hooks/useWorkOrders";
@@ -9,20 +10,22 @@ import { Customer } from "@interfaces/Customer";
 import {
   OriginWorkOrder,
   StateWorkOrder,
+  WorkOrderCommentType,
+  WorkOrderPriority,
   WorkOrderType,
 } from "@interfaces/WorkOrder";
 
-import DateTimePicker from "@react-native-community/datetimepicker";
+import { OperatorType } from "@interfaces/Operator";
 import { configService } from "@services/configService";
 import { useAuthStore } from "@store/authStore";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { Button, Card, TextInput } from "react-native-paper";
-import { theme } from "styles/theme";
+import { Alert, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { CommentUploadProps } from "./components/CommentUploadPhoto";
+import RepairReportFormUI from "./components/RepairReportFormUI";
 
-interface RepairReport {
+export interface RepairReport {
   code: string;
   description: string;
   initialDateTime: Date;
@@ -36,6 +39,8 @@ interface RepairReport {
   operatorCreatorId: string;
   operatorId: string[];
   userId: string;
+  assetId: string;
+  priority: WorkOrderPriority;
 }
 
 const RepairReportForm = () => {
@@ -50,6 +55,7 @@ const RepairReportForm = () => {
 
   const authStore = useAuthStore();
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
+
   const [formData, setFormData] = useState<Partial<RepairReport>>({
     code: "",
     description: "",
@@ -57,13 +63,24 @@ const RepairReportForm = () => {
     installationId: "",
     customerId: undefined,
     refCustomerId: undefined,
-    stateWorkOrder: StateWorkOrder.Waiting,
-    workOrderType: WorkOrderType.Corrective,
-    originWorkOrder: OriginWorkOrder.Maintenance,
+    stateWorkOrder:
+      factoryWorker != null &&
+      factoryWorker.operatorType == OperatorType.Maintenance
+        ? StateWorkOrder.Waiting
+        : StateWorkOrder.Open,
+    workOrderType:
+      factoryWorker != null
+        ? getWorkOrderType(factoryWorker.operatorType)
+        : WorkOrderType.Corrective,
+    originWorkOrder:
+      factoryWorker != null
+        ? getWorkOrderOrigin(factoryWorker.operatorType)
+        : OriginWorkOrder.Maintenance,
     downtimeReasonId: "",
-    operatorCreatorId: factoryWorker.id,
+    assetId: "",
     operatorId: [],
     userId: "67dec0ce2464c1a06ae59182",
+    priority: WorkOrderPriority.Low,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -75,21 +92,28 @@ const RepairReportForm = () => {
     Customer | undefined
   >(undefined);
 
-  const { generateWorkOrderCode, createRepairWorkOrder } = useWorkOrders();
+  const [commentUpload, setCommentUpload] = useState<CommentUploadProps>();
+
+  const {
+    generateWorkOrderCode,
+    createRepairWorkOrder,
+    addCommentToWorkOrder,
+  } = useWorkOrders();
   const { assets, fetchAllAssets } = useAssets();
 
-  // Simular generación de código
   const generateWorkOrderCodeForRepair = async () => {
-    // Simulación de generación de código
-    const workOrderCode = await generateWorkOrderCode(WorkOrderType.Corrective);
+    const workOrderCode = await generateWorkOrderCode(
+      getWorkOrderTypeByOriginType(formData.originWorkOrder)
+    );
     setFormData((prev) => ({ ...prev, code: workOrderCode }));
   };
 
   useEffect(() => {
-    console.log("Auth store:", authStore);
-    fetchAllAssets();
+    if (!assets) {
+      fetchAllAssets();
+    }
     generateWorkOrderCodeForRepair();
-  }, []);
+  }, [formData.originWorkOrder]);
 
   const onChangeDate = (event: any, selectedDate?: Date) => {
     const currentDate = selectedDate || date;
@@ -125,7 +149,8 @@ const RepairReportForm = () => {
   };
 
   const handleSubmit = async () => {
-    console.log("Submitting form with data:", authStore.factoryWorker);
+    if (isLoading) return;
+    setIsLoading(true);
     if (!authStore.factoryWorker) {
       Alert.alert("Error", "No has iniciat sessió");
       return;
@@ -133,14 +158,16 @@ const RepairReportForm = () => {
     const newRepairReport = {
       ...formData,
       operatorId: [authStore.factoryWorker.id],
+      operatorCreatorId: factoryWorker.id,
     };
-    console.log("Form data:", newRepairReport);
-    if (isLoading) return;
+
     if (!validateForm()) {
+      setIsLoading(false);
       return;
     }
 
-    await createRepairWorkOrder(newRepairReport);
+    const response = await createRepairWorkOrder(newRepairReport);
+    await sendComments(response.id);
     Alert.alert("Èxit!", "Ordre de treball creada correctament");
     router.push("/workorders");
   };
@@ -148,218 +175,78 @@ const RepairReportForm = () => {
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.description?.trim()) {
-      newErrors.description = "La descripción es obligatoria";
+    if (!formData.description?.trim() || formData.description === "") {
+      newErrors.description = "La descripció es obligatoria";
     }
+
     if (isCRM) {
       if (!formData.customerId) {
-        newErrors.customerId = "Falta el cliente";
+        newErrors.customerId = "Falta el client";
       }
+    }
+
+    if (!formData.assetId || formData.assetId === "") {
+      newErrors.assetId = "Falta el equip";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  const sendComments = async (workOrderId: string) => {
+    if (
+      !commentUpload ||
+      !commentUpload.files ||
+      commentUpload.files.length === 0
+    )
+      return;
+
+    const filesToSend = commentUpload.files.map((file) => {
+      return {
+        uri: file,
+        name: file.split("/").pop() || "file",
+        type: file.match(/\.(mp4|mov)$/) ? "video/mp4" : "image/jpeg",
+      };
+    });
+
+    await addCommentToWorkOrder({
+      comment: commentUpload.comment ?? "",
+      operatorId: authStore.factoryWorker!.id,
+      workOrderId: workOrderId,
+      type: WorkOrderCommentType.Internal,
+      files: filesToSend as any,
+    });
+  };
+
   return (
-    <KeyboardAwareScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-      extraScrollHeight={300}
-      enableOnAndroid={true}
-      keyboardShouldPersistTaps="handled"
-      enableAutomaticScroll={true}
-    >
-      <Card style={styles.card}>
-        <Card.Content>
-          <View style={styles.form}>
-            <View style={styles.row}>
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Núm. Ordre</Text>
-                <TextInput
-                  value={formData.code || ""}
-                  onChangeText={(text) =>
-                    setFormData((prev) => ({ ...prev, code: text }))
-                  }
-                  style={errors.code ? styles.inputError : styles.input}
-                  mode="outlined"
-                />
-                {errors.code && (
-                  <Text style={styles.errorText}>{errors.code}</Text>
-                )}
-              </View>
-              {isCRM && (
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Referència Client</Text>
-                  <TextInput
-                    label="Referencia"
-                    value={formData.refCustomerId || ""}
-                    onChangeText={(text) =>
-                      setFormData((prev) => ({ ...prev, refCustomerId: text }))
-                    }
-                    style={styles.input}
-                    mode="outlined"
-                  />
-                </View>
-              )}
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Data</Text>
-              <Button
-                mode="outlined"
-                onPress={() => setShowDatePicker(true)}
-                style={styles.dateButton}
-              >
-                {date.toLocaleDateString("es-ES")}
-              </Button>
-              {showDatePicker && (
-                <DateTimePicker
-                  value={date}
-                  mode="date"
-                  display="default"
-                  onChange={onChangeDate}
-                />
-              )}
-              {errors.initialDateTime && (
-                <Text style={styles.errorText}>{errors.initialDateTime}</Text>
-              )}
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Descripció</Text>
-              <TextInput
-                label="Descripció"
-                value={formData.description || ""}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, description: text }))
-                }
-                multiline
-                numberOfLines={4}
-                style={[
-                  styles.textArea,
-                  errors.description ? styles.inputError : null,
-                ]}
-                mode="outlined"
-              />
-              {errors.description && (
-                <Text style={styles.errorText}>{errors.description}</Text>
-              )}
-            </View>
-            {assets && assets.length > 0 && (
-              <AssetSelector
-                assets={assets}
-                selectedAssets={selectedAssets}
-                handleAssetSelected={handleAssetSelected}
-                isCRM={isCRM}
-              />
-            )}
-            {isCRM && (
-              <CustomerSelector
-                customers={customers}
-                selectedCustomer={selectedCustomer}
-                onSelectCustomer={handleSelectedCustomer}
-                onClearSelection={handleDeleteSelectedCustomer}
-              />
-            )}
-
-            {selectedCustomer?.installations?.length > 0 && (
-              <InstallationSelector
-                installations={selectedCustomer.installations}
-                selectedInstallation={formData.installationId}
-                onSelectInstallation={(id) =>
-                  setFormData((prev) => ({ ...prev, installationId: id }))
-                }
-              />
-            )}
-
-            <View style={styles.buttonRow}>
-              <TouchableOpacity
-                style={theme.commonStyles.saveButton}
-                onPress={() => handleSubmit()}
-              >
-                <FontAwesome5 name="save" size={20} color="white" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Card.Content>
-      </Card>
-    </KeyboardAwareScrollView>
+    <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
+      <RepairReportFormUI
+        formData={formData}
+        date={date}
+        showDatePicker={showDatePicker}
+        onChangeDate={onChangeDate}
+        handleAssetSelected={handleAssetSelected}
+        assets={assets}
+        errors={errors}
+        isCRM={isCRM}
+        customers={customers}
+        selectedCustomer={selectedCustomer}
+        handleSelectedCustomer={handleSelectedCustomer}
+        handleDeleteSelectedCustomer={handleDeleteSelectedCustomer}
+        handleSubmit={handleSubmit}
+        isLoading={isLoading}
+        setFormData={setFormData}
+        selectedAssets={selectedAssets}
+        setCommentUpload={setCommentUpload}
+      />
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
-    padding: 16,
-    marginBottom: 24,
-  },
-  contentContainer: {
-    padding: 16,
-  },
-  card: {
-    marginBottom: 16,
-  },
-  form: {
-    gap: 16,
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 16,
-  },
-  inputContainer: {
-    flex: 1,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "bold",
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: "white",
-  },
-  inputError: {
-    backgroundColor: "white",
-    borderColor: "red",
-  },
-  textArea: {
-    height: 100,
-    backgroundColor: "white",
-  },
-  picker: {
-    backgroundColor: "white",
-  },
-  dateButton: {
-    backgroundColor: "white",
-    justifyContent: "flex-start",
-  },
-  selectedItems: {
-    marginTop: 8,
-    gap: 8,
-  },
-  selectedItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 8,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 4,
-  },
-  buttonRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 16,
-    marginTop: 24,
-  },
-  button: {
-    flex: 1,
-  },
-  errorText: {
-    color: "red",
-    fontSize: 12,
-    marginTop: 4,
+    backgroundColor: "#f1f5f9",
   },
 });
 

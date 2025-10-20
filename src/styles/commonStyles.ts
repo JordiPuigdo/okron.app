@@ -66,6 +66,13 @@ export const commonStyles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
   },
+  industrialButton: {
+    backgroundColor: colors.industrial,
+    paddingVertical: spacing.l,
+    paddingHorizontal: spacing.xl,
+    borderRadius: 10,
+    alignItems: "center",
+  },
   disabledButton: {
     backgroundColor: colors.disabled,
   },
@@ -468,7 +475,7 @@ export const commonStyles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: 20,
     paddingVertical: 20,
-    backgroundColor: "#59408F",
+    backgroundColor: colors.industrial,
     alignItems: "center",
   },
   leftColumn: {

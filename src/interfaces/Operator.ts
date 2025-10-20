@@ -11,6 +11,8 @@ export enum OperatorType {
   Maintenance,
   Production,
   Quality,
+  Repairs,
+  Assembly,
 }
 
 export default Operator;

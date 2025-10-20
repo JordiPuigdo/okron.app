@@ -1,5 +1,4 @@
 import { WorkOrderType } from "@interfaces/WorkOrder";
-import { configService } from "@services/configService";
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
 import { theme } from "styles/theme";
@@ -16,13 +15,11 @@ export const TabBar = ({
   onTabChange,
   workOrderType,
 }: TabBarProps) => {
-  const isCRM = configService.getConfigSync().isCRM;
-
   const filteredTabs = TABS.filter((tab) => {
-    if (!isCRM && tab.key == "workOrder") {
-      return false;
-    }
-    if (workOrderType === WorkOrderType.Corrective) {
+    if (
+      workOrderType === WorkOrderType.Corrective ||
+      workOrderType == WorkOrderType.Ticket
+    ) {
       return tab.key != "inspection";
     }
 

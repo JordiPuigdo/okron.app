@@ -26,6 +26,7 @@ import {
   View,
 } from "react-native";
 import { theme } from "styles/theme";
+import { CommentFooter } from "./CommentFooter";
 
 interface Props {
   comments: WorkOrderComment[];
@@ -209,49 +210,6 @@ export const CommentsSection = ({
         />
       )}
 
-      {/* Selección tipo comentario 
-      {isCRM && (
-        <View style={{ flexDirection: "row", marginBottom: 8 }}>
-          {[
-            { label: "Interno", type: WorkOrderCommentType.Internal },
-            { label: "Externo", type: WorkOrderCommentType.External },
-          ].map(({ label, type }) => (
-            <TouchableOpacity
-              key={label}
-              onPress={() => setCommentType(type)}
-              style={[
-                {
-                  flex: 1,
-                  padding: 18,
-                  borderRadius: 4,
-                  alignItems: "center",
-                  borderWidth: 1,
-                  borderColor:
-                    commentType === type
-                      ? theme.colors.primary
-                      : theme.colors.border,
-                  backgroundColor:
-                    commentType === type ? theme.colors.primary : "#fff",
-                  marginRight: label === "Interno" ? 8 : 0,
-                },
-              ]}
-            >
-              <Text
-                style={{
-                  color:
-                    commentType === type
-                      ? theme.colors.white
-                      : theme.colors.text,
-                }}
-              >
-                {label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
-      */}
-
       {/* Previsualización adjuntos */}
       {attachments.length > 0 && (
         <ScrollView
@@ -301,22 +259,6 @@ export const CommentsSection = ({
           ))}
         </ScrollView>
       )}
-      {/* Botón añadir adjunto 
-      <TouchableOpacity
-        style={[
-          theme.commonStyles.addButton,
-          {
-            flexDirection: "row",
-            alignItems: "center",
-            height: 50,
-            marginVertical: 8,
-          },
-        ]}
-        onPress={handlePickAttachment}
-      >
-        <FontAwesome5 name="camera" size={20} color="#fff" />
-      </TouchableOpacity>
-      */}
       <View
         style={[
           theme.commonStyles.inputContainer,
@@ -343,20 +285,22 @@ export const CommentsSection = ({
           multiline
         />
 
-        {/* Botón enviar comentario */}
-        <TouchableOpacity
-          style={[theme.commonStyles.addButton, { height: 80 }]}
-          onPress={handleAdd}
-        >
-          <FontAwesome5 name="save" size={20} color="#fff" />
-        </TouchableOpacity>
+        {newComment.length > 0 ? (
+          <TouchableOpacity
+            style={[theme.commonStyles.addButton, { height: 80 }]}
+            onPress={handleAdd}
+          >
+            <FontAwesome5 name="save" size={20} color="#fff" />
+          </TouchableOpacity>
+        ) : (
+          <CommentFooter
+            onPickAttachment={handlePickAttachment}
+            commentType={commentType}
+            setCommentType={setCommentType}
+            isCRM={isCRM}
+          />
+        )}
       </View>
-      {/*<CommentFooter
-        onPickAttachment={handlePickAttachment}
-        commentType={commentType}
-        setCommentType={setCommentType}
-        isCRM={isCRM}
-      />*/}
     </KeyboardAvoidingView>
   );
 };

@@ -1,13 +1,19 @@
 import { InspectionPointsSection } from "@components/InspectionPoints/inspectionPointsSection";
 import SignModal from "@components/SignModal";
 import { SparePartsSection } from "@components/spareparts/SparepartSection";
+import { AnimatedTabBar } from "@components/workorder/AnimatedTabBar";
 import { CommentsSection } from "@components/workorder/CommentSection";
-import { TabBar } from "@components/workorder/TabBar";
-import { TabKey } from "@components/workorder/utils";
+import {
+  getDefaultTab,
+  getVisibleTabs,
+  getWorkOrderStateToUpdate,
+  TabKey,
+} from "@components/workorder/utils";
+import { WorkOrderCompletionModal } from "@components/workorder/WorkOrderCompletionModal";
 import { WorkOrderForm } from "@components/workorder/WorkOrderForm";
+import { WorkOrderHeader } from "@components/workorder/WorkOrderHeader";
 import { WorkOrderOperatorTimesComponent } from "@components/WorkOrderOperatorTimes/WorkOrderOperatorTimesComponent";
 import { WorkOrderWorkersComponent } from "@components/workOrderWorkersComponent/WorkOrderWorkersComponent";
-import { FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useWorkerTimes } from "@hooks/useWorkerTimes";
 import { useWorkOrders } from "@hooks/useWorkOrders";
 import { OperatorType } from "@interfaces/Operator";
@@ -19,9 +25,8 @@ import {
   WorkOrder,
   WorkOrderCommentType,
   WorkOrderInspectionPoint,
-  WorkOrderType,
+  WorkOrderOperatorTimes,
 } from "@interfaces/WorkOrder";
-import { Text } from "@react-navigation/elements";
 import { LoadingScreen } from "@screens/loading/loading";
 import { configService } from "@services/configService";
 import { useAuthStore } from "@store/authStore";
@@ -29,17 +34,7 @@ import { useAuthStore } from "@store/authStore";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Modal,
-  SafeAreaView,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, SafeAreaView, View } from "react-native";
 import { theme } from "styles/theme";
 
 export default function WorkOrderDetail() {
@@ -89,15 +84,8 @@ export default function WorkOrderDetail() {
 
       setInspectionPoints(data.workOrderInspectionPoint ?? []);
       setWorkerTimes(data.workOrderOperatorTimes ?? []);
-      setActiveTab(
-        tabBar
-          ? tabBar
-          : data.workOrderType === WorkOrderType.Corrective
-          ? isCRM
-            ? "workOrder"
-            : "comments"
-          : "inspection"
-      );
+      if (tabBar !== undefined) setActiveTab(tabBar);
+      else setActiveTab(getDefaultTab(data.workOrderType, isCRM));
     } catch (error) {
       console.error(error);
     } finally {
@@ -137,7 +125,6 @@ export default function WorkOrderDetail() {
   };
 
   const handleUpdateState = (state: StateWorkOrder) => {
-    console.log("handleUpdateState", state);
     if (state === StateWorkOrder.Finished && isCRM) {
       if (workOrder.workOrderComments.length === 0) {
         Alert.alert("Error", "Descripció de la reparació incompleta");
@@ -183,7 +170,6 @@ export default function WorkOrderDetail() {
   };
 
   const updateSimpleState = async (state: StateWorkOrder) => {
-    console.log(workOrder);
     if (!workOrder) return;
     const payload: UpdateStateWorkOrder = {
       workOrderId: workOrder.id,
@@ -279,86 +265,56 @@ export default function WorkOrderDetail() {
     setWorkerTimes(workerTimes.filter((t) => t.id !== id));
   }
 
+  const handleOnCreate = async (created: WorkOrderOperatorTimes) => {
+    setTimeout(async () => {
+      const workOrderRefreshed = await fetchById(workOrder.id);
+      setWorkOrder(workOrderRefreshed);
+      setWorkerTimes(workOrderRefreshed.workOrderOperatorTimes ?? []);
+      setActiveTab("times");
+    }, 500);
+  };
+
+  const handleOnFinalize = async (operatorId: string) => {};
+
   return (
     <SafeAreaView style={theme.commonStyles.mainContainer}>
-      <View style={theme.commonStyles.header}>
-        <View style={{ flex: 1 }}>
-          {workOrder ? (
-            <Text style={theme.commonStyles.headerText}>
-              {workOrder.code} -{" "}
-              {workOrder.description.trim().length > 50
-                ? workOrder.description
-                    .replace(/\s+/g, " ")
-                    .trim()
-                    .slice(0, 50) + "..."
-                : workOrder.description.trim()}
-            </Text>
-          ) : (
-            <Text style={theme.commonStyles.headerText}>
-              Carregant ordre...
-            </Text>
-          )}
-        </View>
-        {workOrder && (
-          <>
-            {/* Botón No Finalizada solo si isCRM */}
-            {isCRM &&
-              workOrder.stateWorkOrder !== StateWorkOrder.Finished &&
-              workOrder.stateWorkOrder !== StateWorkOrder.NotFinished && (
-                <TouchableOpacity
-                  onPress={() => handleUpdateState(StateWorkOrder.NotFinished)}
-                  style={[
-                    theme.commonStyles.finishButton,
-                    { backgroundColor: theme.colors.error, marginRight: 8 },
-                  ]}
-                >
-                  <Ionicons name="close" size={24} color="#fff" />
-                </TouchableOpacity>
-              )}
-            {/* Botón Finalizar/Reabrir */}
-            <TouchableOpacity
-              onPress={() =>
-                handleUpdateState(
-                  workOrder.stateWorkOrder === StateWorkOrder.Finished ||
-                    workOrder.stateWorkOrder === StateWorkOrder.NotFinished
-                    ? StateWorkOrder.Waiting
-                    : StateWorkOrder.Finished
-                )
-              }
-              style={theme.commonStyles.finishButton}
-            >
-              <Ionicons
-                name={
-                  workOrder.stateWorkOrder === StateWorkOrder.Finished ||
-                  workOrder.stateWorkOrder === StateWorkOrder.NotFinished
-                    ? "refresh"
-                    : "checkmark-done"
-                }
-                size={24}
-                color="#fff"
-              />
-            </TouchableOpacity>
-            {isCRM &&
-              (workOrder.stateWorkOrder == StateWorkOrder.Finished ||
-                workOrder.stateWorkOrder == StateWorkOrder.NotFinished) && (
-                <TouchableOpacity
-                  style={[
-                    theme.commonStyles.finishButton,
-                    { backgroundColor: theme.colors.warning },
-                  ]}
-                  onPress={() => setSignatureType(SIGNATURE_TYPES.WORKER)}
-                >
-                  <Ionicons name="create" size={24} color="#fff" />
-                </TouchableOpacity>
-              )}
-          </>
-        )}
-      </View>
+      <WorkOrderHeader
+        title={
+          workOrder
+            ? `${workOrder.code} - ${workOrder.description
+                .trim()
+                .slice(0, 50)}${workOrder.description.length > 50 ? "..." : ""}`
+            : "Carregant ordre..."
+        }
+        state={workOrder?.stateWorkOrder ?? StateWorkOrder.Waiting}
+        isCRM={isCRM}
+        onFinish={() =>
+          authStore.factoryWorker &&
+          handleUpdateState(
+            getWorkOrderStateToUpdate(
+              workOrder.stateWorkOrder,
+              workOrder.workOrderType,
+              authStore.factoryWorker?.operatorType
+            )
+          )
+        }
+        onNotFinished={() => handleUpdateState(StateWorkOrder.NotFinished)}
+        onSign={() => setSignatureType(SIGNATURE_TYPES.WORKER)}
+        operatorType={
+          authStore && authStore.factoryWorker
+            ? authStore.factoryWorker.operatorType
+            : OperatorType.Maintenance
+        }
+      />
       {workOrder && (
-        <TabBar
+        <AnimatedTabBar
           activeTab={activeTab}
-          onTabChange={setActiveTab}
-          workOrderType={workOrder.workOrderType}
+          onTabChange={(tabKey) => {
+            setLoading(true);
+            setActiveTab(tabKey);
+            setTimeout(() => setLoading(false), 200);
+          }}
+          tabs={getVisibleTabs(workOrder.workOrderType)}
         />
       )}
       <View style={theme.commonStyles.content}>
@@ -422,179 +378,45 @@ export default function WorkOrderDetail() {
           ) : (
             <WorkOrderOperatorTimesComponent
               workerTimes={workerTimes}
-              onCreate={(c) => setWorkerTimes([...workerTimes, c])}
-              onFinalize={handleFinalize}
+              onCreate={(c) => handleOnCreate(c)}
+              onFinalize={handleOnFinalize}
               workOrderId={workOrder.id}
               onRemove={(e) => handleRemoveTime(e)}
             />
           ))}
       </View>
 
-      {/* Modal Observaciones al finalizar (solo isCRM) */}
-      <Modal visible={showFinishModal} transparent animationType="slide">
-        <View style={theme.commonStyles.backdrop}>
-          <View style={theme.commonStyles.modalBox}>
-            <Text style={theme.commonStyles.modalTitle}>Observacions</Text>
-            <TextInput
-              style={theme.commonStyles.textArea}
-              multiline
-              value={commentText}
-              onChangeText={setCommentText}
-            />
-            <TouchableOpacity
-              style={[
-                theme.commonStyles.addButton,
-                {
-                  flexDirection: "row",
-                  alignItems: "center",
-                  height: 50,
-                  marginVertical: 8,
-                },
-              ]}
-              onPress={handlePickAttachment}
-            >
-              <FontAwesome5 name="camera" size={20} color="#fff" />
-            </TouchableOpacity>
-            <ScrollView horizontal style={theme.commonStyles.previewRow}>
-              {attachments.map((uri, i) => (
-                <View key={i} style={theme.commonStyles.previewBox}>
-                  <Image
-                    source={{ uri }}
-                    style={theme.commonStyles.previewImage}
-                  />
-                  <TouchableOpacity
-                    style={theme.commonStyles.removeIcon}
-                    onPress={() =>
-                      setAttachments((prev) =>
-                        prev.filter((_, idx) => idx !== i)
-                      )
-                    }
-                  >
-                    <Ionicons name="close-circle" size={32} color="#fff" />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </ScrollView>
-            <View
-              style={[
-                theme.commonStyles.buttonRow,
-                { justifyContent: "space-evenly" },
-              ]}
-            >
-              <TouchableOpacity
-                style={[
-                  theme.commonStyles.modalBtn,
-                  { backgroundColor: theme.colors.error },
-                ]}
-                onPress={() => setShowFinishModal(false)}
-              >
-                <MaterialIcons
-                  name="close"
-                  size={24}
-                  color={theme.colors.white}
-                />
-              </TouchableOpacity>
+      <WorkOrderCompletionModal
+        visible={showFinishModal}
+        title="Observacions"
+        commentText={commentText}
+        attachments={attachments}
+        loading={isLoadingConfirming}
+        onChangeComment={setCommentText}
+        onAddAttachment={handlePickAttachment}
+        onRemoveAttachment={(index) =>
+          setAttachments((prev) => prev.filter((_, i) => i !== index))
+        }
+        onCancel={() => setShowFinishModal(false)}
+        onConfirm={confirmFinish}
+      />
 
-              <TouchableOpacity
-                style={[
-                  theme.commonStyles.modalBtn,
-                  { backgroundColor: theme.colors.success },
-                ]}
-                onPress={() => confirmFinish()}
-              >
-                {isLoadingConfirming ? (
-                  <ActivityIndicator size="small" color={theme.colors.white} />
-                ) : (
-                  <MaterialIcons
-                    name="check"
-                    size={24}
-                    color={theme.colors.white}
-                  />
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <WorkOrderCompletionModal
+        visible={showNotFinishedModal}
+        title="Motiu No Finalització"
+        commentText={commentText}
+        attachments={attachments}
+        loading={isLoadingConfirming}
+        onChangeComment={setCommentText}
+        onAddAttachment={handlePickAttachment}
+        onRemoveAttachment={(index) =>
+          setAttachments((prev) => prev.filter((_, i) => i !== index))
+        }
+        onCancel={() => setShowNotFinishedModal(false)}
+        onConfirm={confirmNotFinished}
+        confirmColor={theme.colors.warning}
+      />
 
-      {/* Modal Motivo No Finalizada */}
-      <Modal visible={showNotFinishedModal} transparent animationType="slide">
-        <View style={theme.commonStyles.backdrop}>
-          <View style={theme.commonStyles.modalBox}>
-            <Text style={theme.commonStyles.modalTitle}>
-              Motiu No Finalització
-            </Text>
-            <TextInput
-              style={theme.commonStyles.textArea}
-              multiline
-              value={commentText}
-              onChangeText={setCommentText}
-            />
-            <TouchableOpacity
-              style={[
-                theme.commonStyles.addButton,
-                {
-                  flexDirection: "row",
-                  alignItems: "center",
-                  height: 50,
-                  marginVertical: 8,
-                },
-              ]}
-              onPress={handlePickAttachment}
-            >
-              <FontAwesome5 name="camera" size={20} color="#fff" />
-            </TouchableOpacity>
-            <ScrollView horizontal style={theme.commonStyles.previewRow}>
-              {attachments.map((uri, i) => (
-                <View key={i} style={theme.commonStyles.previewBox}>
-                  <Image
-                    source={{ uri }}
-                    style={theme.commonStyles.previewImage}
-                  />
-                  <TouchableOpacity
-                    style={theme.commonStyles.removeIcon}
-                    onPress={() =>
-                      setAttachments((prev) =>
-                        prev.filter((_, idx) => idx !== i)
-                      )
-                    }
-                  >
-                    <Ionicons name="close-circle" size={32} color="#fff" />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </ScrollView>
-            <View style={theme.commonStyles.buttonRow}>
-              <TouchableOpacity
-                style={[
-                  theme.commonStyles.modalBtn,
-                  { backgroundColor: theme.colors.error },
-                ]}
-                onPress={() => setShowNotFinishedModal(false)}
-              >
-                <MaterialIcons
-                  name="close"
-                  size={24}
-                  color={theme.colors.white}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  theme.commonStyles.modalBtn,
-                  { backgroundColor: theme.colors.success },
-                ]}
-                onPress={confirmNotFinished}
-              >
-                <MaterialIcons
-                  name="check"
-                  size={24}
-                  color={theme.colors.white}
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
       {signatureType !== SIGNATURE_TYPES.UNDEFINED && (
         <SignModal
           signatureType={signatureType}

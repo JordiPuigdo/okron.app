@@ -7,6 +7,7 @@ import {
   WareHouseStockAvailability,
 } from "@interfaces/SparePart";
 import { WorkOrder } from "@interfaces/WorkOrder";
+import { configService } from "@services/configService";
 import SparePartService from "@services/sparepartService";
 import { useAuthStore } from "@store/authStore";
 import React, { useMemo, useState } from "react";
@@ -39,6 +40,7 @@ export const SparePartsSection = ({
     useWareHouses();
   const authStore = useAuthStore();
   const [loading, setLoading] = useState(false);
+  const { isCRM } = configService.getConfigSync();
 
   const [modalType, setModalType] = useState<"consume" | "restore" | null>(
     null
@@ -162,6 +164,13 @@ export const SparePartsSection = ({
     const qty = Number(quantity);
     if (isNaN(qty) || qty <= 0) {
       Alert.alert("Error", "La cantidad debe ser un número positivo");
+      setIsLoading(false);
+      return;
+    }
+
+    if (qty > selectedPart.maxStock) {
+      Alert.alert("Error", "No tens suficient stock");
+      setIsLoading(false);
       return;
     }
 
@@ -315,7 +324,7 @@ export const SparePartsSection = ({
             />
             <View style={styles.stockTextContainer}>
               <Text style={styles.warehouseText} numberOfLines={1}>
-                {item.warehouse ?? item.warehouseId}
+                {item.warehouse ?? item.warehouseId} Quantiat: {item.stock}
               </Text>
             </View>
           </View>
@@ -372,19 +381,21 @@ export const SparePartsSection = ({
           onChangeText={setSearch}
         />
 
-        <TouchableOpacity
-          style={{
-            padding: 8,
-            marginLeft: 8,
-            backgroundColor: theme.colors.primary,
-            borderRadius: 8,
-          }}
-          onPress={() => {
-            handleCreate();
-          }}
-        >
-          <Ionicons name="add-circle-outline" size={32} color="#fff" />
-        </TouchableOpacity>
+        {isCRM && (
+          <TouchableOpacity
+            style={{
+              padding: 8,
+              marginLeft: 8,
+              backgroundColor: theme.colors.primary,
+              borderRadius: 8,
+            }}
+            onPress={() => {
+              handleCreate();
+            }}
+          >
+            <Ionicons name="add-circle-outline" size={32} color="#fff" />
+          </TouchableOpacity>
+        )}
       </View>
       {stockAvailability.length === 0 && (
         <View style={styles.loadingContainer}>

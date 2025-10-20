@@ -1,8 +1,10 @@
+import { OperatorType } from "@interfaces/Operator";
 import { create } from "zustand";
 
 type FactoryWorker = {
   id: string;
   name: string;
+  operatorType: OperatorType;
 };
 
 type AuthState = {

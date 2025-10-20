@@ -1,25 +1,27 @@
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  FlatList,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { FlatList, View } from "react-native";
 
 import {
-  OriginWorkOrder,
   StateWorkOrder,
   WorkOrder,
+  WorkOrderPriority,
+  WorkOrderType,
 } from "@interfaces/WorkOrder";
 import { useAuthStore } from "../../stores/authStore";
 
+import { getUserType, getWorkOrderOrigin } from "@components/workorder/utils";
+import { WorkOrderFilters } from "@components/workorder/WorkOrderFilters";
 import { WorkOrderItem } from "@components/workorder/WorkOrderItem";
-import { Ionicons } from "@expo/vector-icons";
+import { WorkOrdersListHeader } from "@components/workorder/WorkOrdersListHeader";
 import { useWorkOrders } from "@hooks/useWorkOrders";
+import { OperatorType } from "@interfaces/Operator";
 import { LoadingScreen } from "@screens/loading/loading";
+import dayjs from "dayjs";
+import isBetween from "dayjs/plugin/isBetween";
 import { router, useFocusEffect } from "expo-router";
 import { theme } from "styles/theme";
+
+dayjs.extend(isBetween);
 
 export default function workOrders() {
   const { fetchWithFilters } = useWorkOrders();
@@ -30,12 +32,24 @@ export default function workOrders() {
 
   const authStore = useAuthStore();
 
+  const [filtersVisible, setFiltersVisible] = useState(false);
+  const [filters, setFilters] = useState<{
+    startDate?: Date;
+    endDate?: Date;
+    priority?: WorkOrderPriority | null;
+    showFinishedToday?: boolean;
+    workOrderType?: WorkOrderType | null;
+    orderBy?: string | null;
+  }>({});
+
   const fetchData = async () => {
     try {
       const data = await fetchWithFilters({
-        originWorkOrder: OriginWorkOrder.Maintenance,
+        originWorkOrder: getWorkOrderOrigin(
+          authStore.factoryWorker.operatorType
+        ),
         operatorId: authStore.factoryWorker.id,
-        userType: 0,
+        userType: getUserType(authStore.factoryWorker.operatorType),
       });
 
       if (!data) return;
@@ -43,7 +57,7 @@ export default function workOrders() {
         data.sort((a, b) => {
           const startTimeA = new Date(a.creationTime).valueOf();
           const startTimeB = new Date(b.creationTime).valueOf();
-          return startTimeA - startTimeB;
+          return startTimeB - startTimeA;
         })
       );
     } catch (error) {
@@ -61,10 +75,7 @@ export default function workOrders() {
     setRefreshing(false);
   };
 
-  const [showFinishedOnly, setShowFinishedOnly] = useState(false);
-
   useEffect(() => {
-    console.log("Auth store:", authStore);
     if (authStore.factoryWorker) {
       fetchData();
     }
@@ -80,15 +91,118 @@ export default function workOrders() {
     }, [authStore.factoryWorker])
   );
 
-  const validStates = [StateWorkOrder.Finished, StateWorkOrder.NotFinished];
-  const filteredWorkOrders = useMemo(() => {
-    let result = workOrders;
-    if (showFinishedOnly) {
-      result = result.filter((wo) => validStates.includes(wo.stateWorkOrder));
-    } else {
-      result = result.filter((wo) => !validStates.includes(wo.stateWorkOrder));
+  const validStatesMaintenance = [
+    StateWorkOrder.OnGoing,
+    StateWorkOrder.Waiting,
+    StateWorkOrder.Paused,
+  ];
+
+  const validStatesQuality = [
+    StateWorkOrder.Open,
+    StateWorkOrder.PendingToValidate,
+  ];
+
+  const validStatesRepairs = [
+    StateWorkOrder.Waiting,
+    StateWorkOrder.OnGoing,
+    StateWorkOrder.Paused,
+  ];
+
+  function getValidStates() {
+    if (!authStore) return validStatesMaintenance;
+    const operatorType = authStore.factoryWorker?.operatorType;
+
+    if (operatorType == OperatorType.Maintenance) {
+      return validStatesMaintenance;
+    } else if (operatorType == OperatorType.Quality) {
+      return validStatesQuality;
+    } else if (operatorType == OperatorType.Repairs) {
+      return validStatesRepairs;
     }
 
+    return [];
+  }
+
+  const filteredWorkOrders = useMemo(() => {
+    if (
+      !workOrders ||
+      workOrders.length == 0 ||
+      !authStore ||
+      !authStore.factoryWorker
+    )
+      return [];
+    let result = workOrders;
+
+    const validStates = getValidStates?.() ?? [];
+
+    // Mostrar solo las finalizadas o activas según el toggle
+    if (filters.showFinishedToday) {
+      result = result.filter((wo) => !validStates.includes(wo.stateWorkOrder));
+    } else {
+      result = result.filter((wo) => validStates.includes(wo.stateWorkOrder));
+    }
+
+    if (filters.workOrderType !== undefined && filters.workOrderType !== null) {
+      result = result.filter(
+        (wo) => wo.workOrderType === filters.workOrderType
+      );
+    }
+
+    // 🔹 Filtro por fecha
+    if (filters.startDate && filters.endDate) {
+      result = result.filter((wo) => {
+        return dayjs(wo.creationTime).isBetween(
+          filters.startDate,
+          filters.endDate,
+          "day",
+          "[]"
+        );
+      });
+    }
+
+    // 🔹 Filtro por prioridad
+    if (filters.priority !== undefined && filters.priority !== null) {
+      result = result.filter((wo) => wo.priority === filters.priority);
+    }
+
+    if (filters.orderBy) {
+      switch (filters.orderBy) {
+        case "code_asc":
+          result = result.sort((a, b) => a.code.localeCompare(b.code));
+          break;
+        case "code_desc":
+          result = result.sort((a, b) => b.code.localeCompare(a.code));
+          break;
+        case "date_asc":
+          result = result.sort(
+            (a, b) =>
+              new Date(a.creationTime).getTime() -
+              new Date(b.creationTime).getTime()
+          );
+          break;
+        case "date_desc":
+          result = result.sort(
+            (a, b) =>
+              new Date(b.creationTime).getTime() -
+              new Date(a.creationTime).getTime()
+          );
+          break;
+        case "state_asc":
+          result = result.sort((a, b) => a.stateWorkOrder - b.stateWorkOrder);
+          break;
+        case "state_desc":
+          result = result.sort((a, b) => b.stateWorkOrder - a.stateWorkOrder);
+          break;
+        case "priority_asc":
+          result = result.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+          break;
+        case "priority_desc":
+          result = result.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+          break;
+      }
+    }
+
+    // 🔹 Filtro por texto
     const query = searchQuery.toLowerCase().trim();
     if (!query) return result;
 
@@ -104,52 +218,42 @@ export default function workOrders() {
           workOrder.operator.some((x) => x.name.toLowerCase().includes(query))
         );
       });
-  }, [workOrders, searchQuery, authStore.factoryWorker, showFinishedOnly]);
+  }, [
+    workOrders,
+    searchQuery,
+    authStore.factoryWorker,
+    filters.startDate,
+    filters.endDate,
+    filters.priority,
+    filters.workOrderType,
+    filters.showFinishedToday,
+    filters.orderBy,
+  ]);
+
+  function areFiltersActive(filters) {
+    return (
+      filters.priority != null ||
+      filters.startDate != null ||
+      filters.endDate != null ||
+      filters.showFinishedToday === true ||
+      filters.workOrderType != null ||
+      filters.orderBy != null
+    );
+  }
 
   if (isLoading) {
     return <LoadingScreen />;
   }
   return (
     <View style={theme.commonStyles.mainContainer}>
-      <View style={theme.commonStyles.header}>
-        <View style={theme.commonStyles.leftColumn}>
-          <Text
-            style={theme.commonStyles.username}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {authStore.factoryWorker?.name ?? ""}
-          </Text>
-          <Text style={theme.commonStyles.total}>
-            Total {filteredWorkOrders.length}
-          </Text>
-        </View>
-
-        <View style={theme.commonStyles.centerColumn}>
-          <TextInput
-            style={theme.commonStyles.searchInput}
-            placeholder="Buscar..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
-
-        <View style={theme.commonStyles.rightColumn}>
-          <TouchableOpacity
-            onPress={() => setShowFinishedOnly(!showFinishedOnly)}
-            style={{ padding: 8 }}
-          >
-            <Ionicons
-              name={showFinishedOnly ? "checkmark-done" : "list"}
-              size={32}
-              color="#fff"
-            />
-          </TouchableOpacity>
-          {/* <TouchableOpacity onPress={() => router.push("/corrective")}>
-            <Ionicons name="add-circle" size={32} color="#fff" />
-          </TouchableOpacity>*/}
-        </View>
-      </View>
+      <WorkOrdersListHeader
+        operatorName={authStore.factoryWorker?.name ?? ""}
+        totalOrders={filteredWorkOrders.length}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        onOpenFilters={() => setFiltersVisible(true)}
+        hasActiveFilters={areFiltersActive(filters)}
+      />
 
       {
         <FlatList
@@ -166,6 +270,12 @@ export default function workOrders() {
           contentContainerStyle={{ paddingBottom: 20 }}
         />
       }
+
+      <WorkOrderFilters
+        visible={filtersVisible}
+        onClose={() => setFiltersVisible(false)}
+        onApply={(newFilters) => setFilters(newFilters)}
+      />
     </View>
   );
 }

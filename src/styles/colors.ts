@@ -28,4 +28,5 @@ export const colors = {
   buttonStart: "#28a745",
   buttonStop: "#dc3545",
   buttonManual: "#007bff",
+  industrial: "#0a2947",
 };
