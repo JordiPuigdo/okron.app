@@ -1,4 +1,5 @@
-import { StateWorkOrder } from "@interfaces/WorkOrder";
+import { OperatorType } from "@interfaces/Operator";
+import { OriginWorkOrder, StateWorkOrder } from "@interfaces/WorkOrder";
 
 export const translateStateWorkOrder = (state: any): string => {
   switch (state) {
@@ -20,6 +21,35 @@ export const translateStateWorkOrder = (state: any): string => {
       return "Tancat";
     case StateWorkOrder.NotFinished:
       return "No Finalitzada";
+    default:
+      return "";
+  }
+};
+
+export const translateOriginWorkOrder = (
+  originWorkOrder: OriginWorkOrder
+): string => {
+  switch (originWorkOrder) {
+    case OriginWorkOrder.Maintenance:
+      return "Manteniment";
+    case OriginWorkOrder.Quality:
+      return "Qualitat";
+    case OriginWorkOrder.Production:
+      return "Producció";
+
+    default:
+      return "";
+  }
+};
+
+export const translateOperatorType = (operatorType: OperatorType): string => {
+  switch (operatorType) {
+    case OperatorType.Maintenance:
+      return "MANTENIMENT";
+    case OperatorType.Quality:
+      return "QUALITAT";
+    case OperatorType.Production:
+      return "PRODUCCIÓ";
     default:
       return "";
   }

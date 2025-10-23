@@ -1,4 +1,6 @@
 import { FontAwesome5, Ionicons } from "@expo/vector-icons";
+import { OperatorType } from "@interfaces/Operator";
+import { translateOperatorType } from "@utils/workorderUtils";
 import React from "react";
 import {
   StyleSheet,
@@ -16,6 +18,7 @@ export const WorkOrdersListHeader = ({
   setSearchQuery,
   onOpenFilters,
   hasActiveFilters,
+  operatorType,
 }: {
   operatorName: string;
   totalOrders: number;
@@ -23,6 +26,7 @@ export const WorkOrdersListHeader = ({
   setSearchQuery: (val: string) => void;
   onOpenFilters: () => void;
   hasActiveFilters: boolean;
+  operatorType: OperatorType;
 }) => {
   return (
     <View style={styles.headerContainer}>
@@ -34,7 +38,7 @@ export const WorkOrdersListHeader = ({
           </View>
           <View>
             <Text style={styles.username} numberOfLines={1}>
-              {operatorName}
+              {operatorName} - {translateOperatorType(operatorType)}
             </Text>
             <Text style={styles.totalText}>Total ordres: {totalOrders}</Text>
           </View>

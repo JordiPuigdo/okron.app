@@ -114,7 +114,10 @@ export default function workOrders() {
 
     if (operatorType == OperatorType.Maintenance) {
       return validStatesMaintenance;
-    } else if (operatorType == OperatorType.Quality) {
+    } else if (
+      operatorType == OperatorType.Quality ||
+      operatorType == OperatorType.Production
+    ) {
       return validStatesQuality;
     } else if (operatorType == OperatorType.Repairs) {
       return validStatesRepairs;
@@ -253,6 +256,7 @@ export default function workOrders() {
         setSearchQuery={setSearchQuery}
         onOpenFilters={() => setFiltersVisible(true)}
         hasActiveFilters={areFiltersActive(filters)}
+        operatorType={authStore.factoryWorker?.operatorType!}
       />
 
       {

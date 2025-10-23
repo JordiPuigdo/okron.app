@@ -130,6 +130,10 @@ export function getUserType(operatorType: OperatorType) {
       return UserType.Production;
     case OperatorType.Quality:
       return UserType.Quality;
+    case OperatorType.Repairs:
+      return UserType.CRM;
+    case OperatorType.Assembly:
+      return UserType.CRM;
     default:
       return UserType.Maintenance;
   }

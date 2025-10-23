@@ -1,5 +1,6 @@
 import { FontAwesome5 } from "@expo/vector-icons";
 import { StateWorkOrder, WorkOrder } from "@interfaces/WorkOrder";
+import { translateOriginWorkOrder } from "@utils/workorderUtils";
 import dayjs from "dayjs";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -60,6 +61,9 @@ export const WorkOrderCard: React.FC<WorkOrderCardProps> = ({
     <View style={styles.card}>
       <View style={styles.headerRow}>
         <Text style={styles.code}>{workOrder.code || "-"}</Text>
+        <Text style={styles.code}>
+          {translateOriginWorkOrder(workOrder.originWorkOrder) || "-"}
+        </Text>
         <View style={getBadgeStyle(workOrder.stateWorkOrder)}>
           <Text style={styles.badgeText}>
             {getBadgeText(workOrder.stateWorkOrder)}

@@ -45,7 +45,7 @@ export const WorkOrderSummary: React.FC<Props> = ({ workOrder }) => {
   return (
     <ScrollView style={{ backgroundColor: "#f4f6f8", padding: 12 }}>
       {workOrder.id && (
-        <WorkOrderCard workOrder={workOrder} showOperators={false} />
+        <WorkOrderCard workOrder={workOrder} showOperators={true} />
       )}
 
       {workOrderCreated && (
