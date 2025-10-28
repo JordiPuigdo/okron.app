@@ -25,10 +25,8 @@
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="myokronapp"/>
-        <data android:scheme="com.jordi.puigdo.myokronapp"/>
-        <data android:scheme="exp+Jpont"/>
-        <data android:scheme="exp+jpont"/>
+        <data android:scheme="okronapp"/>
+        <data android:scheme="exp+okronapp"/>
       </intent-filter>
     </activity>
   </application>

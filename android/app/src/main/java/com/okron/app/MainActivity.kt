@@ -1,4 +1,4 @@
-package com.jordi.puigdo.myokronapp
+package com.okron.app
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

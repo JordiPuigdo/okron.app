@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Jpont",
-    "slug": "Jpont",
+    "name": "OkronApp",
+    "slug": "okronapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
-    "scheme": "myokronapp",
+    "scheme": "okronapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -22,7 +22,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.jordi.puigdo.myokronapp"
+      "package": "com.okron.app",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro",
@@ -44,12 +45,12 @@
     "experiments": {
       "typedRoutes": true
     },
+    "owner": "jordi.puigdo",
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "2f4dd69d-91ea-4212-ae8b-8683dd41d602"
+        "projectId": "7e6e5ec5-3fa6-446f-b385-819476f2f7ef"
       }
-    },
-    "owner": "jordi.puigdo"
+    }
   }
 }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1097670195419",
+    "project_id": "okronapp-995f3",
+    "storage_bucket": "okronapp-995f3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1097670195419:android:523e603cfc4ffe443774fe",
+        "android_client_info": {
+          "package_name": "com.okron.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJdEzuVnCkKjeVWSpw43Pr5A-Q-2UiQEU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
