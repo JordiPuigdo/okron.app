@@ -19,6 +19,7 @@ export const WorkOrdersListHeader = ({
   onOpenFilters,
   hasActiveFilters,
   operatorType,
+  isCRM,
 }: {
   operatorName: string;
   totalOrders: number;
@@ -27,6 +28,7 @@ export const WorkOrdersListHeader = ({
   onOpenFilters: () => void;
   hasActiveFilters: boolean;
   operatorType: OperatorType;
+  isCRM: boolean;
 }) => {
   return (
     <View style={styles.headerContainer}>
@@ -72,16 +74,29 @@ export const WorkOrdersListHeader = ({
         </View>
 
         {/* Botón de filtros */}
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            hasActiveFilters && styles.filterButtonActive, // ✅ cambio de color visual
-          ]}
-          onPress={onOpenFilters}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="filter" size={22} color="#fff" />
-        </TouchableOpacity>
+        {isCRM ? (
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              hasActiveFilters && styles.filterButtonActive, // ✅ cambio de color visual
+            ]}
+            onPress={onOpenFilters}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="filter" size={22} color="#fff" />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              hasActiveFilters && styles.filterButtonActive, // ✅ cambio de color visual
+            ]}
+            onPress={onOpenFilters}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="filter" size={22} color="#fff" />
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );

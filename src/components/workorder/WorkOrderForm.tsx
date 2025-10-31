@@ -120,7 +120,7 @@ export const WorkOrderForm: React.FC<Props> = ({ workOrder, onRefresh }) => {
             </View>
 
             <View style={styles.column}>
-              <Text style={styles.label}>RÉF. CLIENT</Text>
+              <Text style={styles.label}>REF. CLIENT</Text>
               <Text style={styles.value}>{workOrder.refCustomerId || "-"}</Text>
             </View>
           </View>
@@ -128,7 +128,7 @@ export const WorkOrderForm: React.FC<Props> = ({ workOrder, onRefresh }) => {
         {/* OBJECTE */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>OBJECTE</Text>
-          <Text>{workOrder.asset.description}</Text>
+          <Text>{workOrder.asset?.description}</Text>
         </View>
 
         {/* AVÍS */}

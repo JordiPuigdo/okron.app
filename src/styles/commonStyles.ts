@@ -245,10 +245,11 @@ export const commonStyles = StyleSheet.create({
     ...typography.body,
   },
   commentItem: {
-    backgroundColor: "#EEE",
+    backgroundColor: "#007BFF",
     padding: 12,
     borderRadius: 8,
     marginBottom: 10,
+    marginVertical: 0,
   },
   commentHeader: {
     flexDirection: "row",
@@ -715,5 +716,35 @@ export const commonStyles = StyleSheet.create({
   linkText: {
     color: "#007BFF", // o cualquier azul que uses
     textDecorationLine: "underline",
+  },
+  icon: {
+    marginRight: 6,
+    color: "#526070",
+  },
+});
+
+export const shadows = StyleSheet.create({
+  sm: {
+    // iOS
+    shadowColor: colors.black,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    // Android
+    elevation: 2,
+  },
+  md: {
+    shadowColor: colors.black,
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  lg: {
+    shadowColor: colors.black,
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
   },
 });

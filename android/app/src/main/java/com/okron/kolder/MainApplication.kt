@@ -1,4 +1,4 @@
-package com.okron.app
+package com.okron.kolder
 
 import android.app.Application
 import android.content.res.Configuration

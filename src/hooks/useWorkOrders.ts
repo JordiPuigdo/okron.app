@@ -114,7 +114,6 @@ export const useWorkOrders = () => {
     data: AddWorkOrderOperatorTimes
   ): Promise<AddWorkOrderOperatorTimes> => {
     try {
-      console.log("addWorkOrderOperatorTimes", data);
       const response = await workOrderService.addWorkOrderOperatorTimes(data);
       return response!;
     } catch (error) {

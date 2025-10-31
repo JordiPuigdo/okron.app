@@ -1,26 +1,133 @@
 import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import { WorkOrderTimeType } from "@interfaces/WorkOrder";
+import DateTimePicker, {
+  DateTimePickerAndroid,
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
-import React, { useState } from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useCallback, useMemo, useState } from "react";
+import {
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface Props {
   visible: boolean;
   onClose: () => void;
   onSave: (startTime: Date, endTime: Date) => void;
+  type: WorkOrderTimeType;
 }
+
+type PickerType = "startDate" | "startTime" | "endDate" | "endTime" | null;
 
 export const ManualEntryModal: React.FC<Props> = ({
   visible,
   onClose,
   onSave,
+  type,
 }) => {
-  const now = new Date();
-  const [startDate, setStartDate] = useState<Date>(now);
-  const [endDate, setEndDate] = useState<Date>(now);
-  const [showPicker, setShowPicker] = useState<{
-    type: "startDate" | "startTime" | "endDate" | "endTime" | null;
-  }>({ type: null });
+  const [startDate, setStartDate] = useState<Date>(new Date());
+  const [endDate, setEndDate] = useState<Date>(new Date());
+  const [showPicker, setShowPicker] = useState<{ type: PickerType }>({
+    type: null,
+  });
+
+  const mode: "date" | "time" = useMemo(
+    () =>
+      showPicker.type && showPicker.type.includes("Date") ? "date" : "time",
+    [showPicker.type]
+  );
+
+  // Helpers
+  const mergeDateAndTime = useCallback(
+    (base: Date, from: Date, use: "date" | "time") => {
+      const result = new Date(base);
+      if (use === "date") {
+        result.setFullYear(from.getFullYear(), from.getMonth(), from.getDate());
+      } else {
+        result.setHours(from.getHours(), from.getMinutes(), 0, 0);
+      }
+      return result;
+    },
+    []
+  );
+
+  const clampEndAfterStart = useCallback(
+    (nextStart: Date, currentEnd: Date) => {
+      return currentEnd < nextStart ? nextStart : currentEnd;
+    },
+    []
+  );
+
+  // ANDROID: open system dialogs (more reliable than inline inside a custom Modal)
+  const openAndroidPicker = (type: Exclude<PickerType, null>) => {
+    const isStart = type.startsWith("start");
+    const isDate = type.includes("Date");
+    const current = isStart ? startDate : endDate;
+
+    DateTimePickerAndroid.open({
+      value: current,
+      mode: isDate ? "date" : "time",
+      is24Hour: true,
+      onChange: (event, selected) => {
+        if (event.type !== "set" || !selected) return;
+
+        if (type === "startDate") {
+          const next = mergeDateAndTime(startDate, selected, "date");
+          setStartDate(next);
+          setEndDate((prevEnd) => clampEndAfterStart(next, prevEnd));
+        } else if (type === "startTime") {
+          const next = mergeDateAndTime(startDate, selected, "time");
+          setStartDate(next);
+          setEndDate((prevEnd) => clampEndAfterStart(next, prevEnd));
+        } else if (type === "endDate") {
+          setEndDate((prev) => mergeDateAndTime(prev, selected, "date"));
+        } else if (type === "endTime") {
+          setEndDate((prev) => mergeDateAndTime(prev, selected, "time"));
+        }
+      },
+    });
+  };
+
+  // Unified entry point from buttons
+  const showDateTimePicker = (type: PickerType) => {
+    if (!type) return;
+    if (Platform.OS === "android") {
+      openAndroidPicker(type);
+    } else {
+      // iOS: render inline picker inside our modal
+      setShowPicker({ type });
+    }
+  };
+
+  // iOS inline picker handler
+  const onChangeDate = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    const isSet = Boolean(selectedDate); // iOS: event.type not reliable, pick by value presence
+    if (!isSet || !selectedDate) {
+      setShowPicker({ type: null });
+      return;
+    }
+
+    if (showPicker.type === "startDate") {
+      const next = mergeDateAndTime(startDate, selectedDate, "date");
+      setStartDate(next);
+      setEndDate((prevEnd) => clampEndAfterStart(next, prevEnd));
+    } else if (showPicker.type === "startTime") {
+      const next = mergeDateAndTime(startDate, selectedDate, "time");
+      setStartDate(next);
+      setEndDate((prevEnd) => clampEndAfterStart(next, prevEnd));
+    } else if (showPicker.type === "endDate") {
+      setEndDate((prev) => mergeDateAndTime(prev, selectedDate, "date"));
+    } else if (showPicker.type === "endTime") {
+      setEndDate((prev) => mergeDateAndTime(prev, selectedDate, "time"));
+    }
+
+    setShowPicker({ type: null });
+  };
 
   const handleSave = () => {
     if (endDate <= startDate) {
@@ -31,60 +138,16 @@ export const ManualEntryModal: React.FC<Props> = ({
     onClose();
   };
 
-  const showDateTimePicker = (type: typeof showPicker.type) => {
-    setShowPicker({ type });
-  };
-
-  const onChangeDate = (event: any, selectedDate?: Date) => {
-    if (!selectedDate) {
-      setShowPicker({ type: null });
-      return;
-    }
-
-    switch (showPicker.type) {
-      case "startDate":
-        setStartDate((prev) => {
-          const newDate = new Date(selectedDate);
-          newDate.setHours(prev.getHours(), prev.getMinutes());
-          return newDate;
-        });
-        break;
-
-      case "startTime":
-        setStartDate((prev) => {
-          const newDate = new Date(prev);
-          newDate.setHours(selectedDate.getHours(), selectedDate.getMinutes());
-          return newDate;
-        });
-        break;
-
-      case "endDate":
-        setEndDate((prev) => {
-          const newDate = new Date(selectedDate);
-          newDate.setHours(prev.getHours(), prev.getMinutes());
-          return newDate;
-        });
-        break;
-
-      case "endTime":
-        setEndDate((prev) => {
-          const newDate = new Date(prev);
-          newDate.setHours(selectedDate.getHours(), selectedDate.getMinutes());
-          return newDate;
-        });
-        break;
-    }
-
-    setShowPicker({ type: null });
-  };
+  const textHeader =
+    type === WorkOrderTimeType.Time ? "Laborable" : "Desplaçament";
 
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.overlay}>
         <View style={styles.container}>
-          <Text style={styles.title}>Entrada manual</Text>
+          <Text style={styles.title}>Entrada manual - {textHeader}</Text>
 
-          {/* --- Bloque de inicio --- */}
+          {/* Inicio */}
           <View style={styles.row}>
             <TouchableOpacity
               onPress={() => showDateTimePicker("startDate")}
@@ -107,7 +170,7 @@ export const ManualEntryModal: React.FC<Props> = ({
             </TouchableOpacity>
           </View>
 
-          {/* --- Bloque de fin --- */}
+          {/* Fin */}
           <View style={styles.row}>
             <TouchableOpacity
               onPress={() => showDateTimePicker("endDate")}
@@ -130,16 +193,17 @@ export const ManualEntryModal: React.FC<Props> = ({
             </TouchableOpacity>
           </View>
 
-          {/* --- DateTime Picker --- */}
-          {showPicker.type !== null && (
+          {/* iOS inline picker only */}
+          {Platform.OS === "ios" && showPicker.type && (
             <DateTimePicker
-              mode={showPicker.type.includes("Date") ? "date" : "time"}
+              key={`${showPicker.type}-${mode}`}
+              mode={mode}
               value={showPicker.type.startsWith("start") ? startDate : endDate}
               onChange={onChangeDate}
             />
           )}
 
-          {/* --- Botones inferiores --- */}
+          {/* Acciones */}
           <View style={styles.actions}>
             <TouchableOpacity
               style={[styles.button, styles.cancel]}
@@ -222,10 +286,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  cancel: {
-    backgroundColor: "#6c757d",
-  },
-  save: {
-    backgroundColor: "#0d8de0",
-  },
+  cancel: { backgroundColor: "#6c757d" },
+  save: { backgroundColor: "#0d8de0" },
 });

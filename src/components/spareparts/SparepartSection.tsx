@@ -53,6 +53,7 @@ export const SparePartsSection = ({
     warehouseId: string;
     warehouseName: string;
     maxStock: number;
+    isVirtual: boolean;
   } | null>(null);
 
   const [quantity, setQuantity] = useState<string>("1");
@@ -120,7 +121,8 @@ export const SparePartsSection = ({
     sparePartCode: string,
     warehouseId: string,
     warehouseName: string,
-    maxStock: number
+    maxStock: number,
+    isVirtual: boolean
   ) => {
     if (
       !workOrder.workOrderSpareParts.find((x) => x.sparePart.id === sparePartId)
@@ -131,7 +133,8 @@ export const SparePartsSection = ({
         sparePartCode,
         warehouseId,
         warehouseName,
-        maxStock
+        maxStock,
+        isVirtual
       );
     }
   };
@@ -142,7 +145,8 @@ export const SparePartsSection = ({
     sparePartCode: string,
     warehouseId: string,
     warehouseName: string,
-    maxStock: number
+    maxStock: number,
+    isVirtual: boolean
   ) => {
     setModalType(type);
     setSelectedPart({
@@ -152,6 +156,7 @@ export const SparePartsSection = ({
       warehouseId,
       warehouseName,
       maxStock,
+      isVirtual,
     });
     setQuantity("1");
     setModalVisible(true);
@@ -168,7 +173,7 @@ export const SparePartsSection = ({
       return;
     }
 
-    if (qty > selectedPart.maxStock) {
+    if (qty > selectedPart.maxStock && !selectedPart.isVirtual) {
       Alert.alert("Error", "No tens suficient stock");
       setIsLoading(false);
       return;
@@ -284,16 +289,21 @@ export const SparePartsSection = ({
       workOrder.workOrderSpareParts
         .filter((x) => x.sparePart.id === sparePartId)
         .map((x) => x.quantity)
-        .reduce((a, b) => a + b, 0)
+        .reduce((a, b) => a + b, 0),
+      item.isVirtual
     );
   };
 
   const renderStockLine =
-    (sparePartId: string, sparePartCode: string) =>
+    (sparePartId: string, sparePartCode: string, isVirtual: boolean) =>
     ({
       item,
     }: {
-      item: { warehouseId: string; warehouse?: string; stock: number };
+      item: {
+        warehouseId: string;
+        warehouse?: string;
+        stock: number;
+      };
     }) => {
       const quantity = consumedMap.get(sparePartId)?.get(item.warehouseId) || 0;
 
@@ -312,7 +322,8 @@ export const SparePartsSection = ({
               sparePartCode,
               item.warehouseId,
               item.warehouse ?? item.warehouseId,
-              item.stock
+              item.stock,
+              isVirtual
             )
           }
         >
@@ -414,7 +425,11 @@ export const SparePartsSection = ({
             <FlatList
               data={item.warehouseStock}
               keyExtractor={(w) => w.warehouseId}
-              renderItem={renderStockLine(item.sparePartId, item.sparePartCode)}
+              renderItem={renderStockLine(
+                item.sparePartId,
+                item.sparePartCode,
+                item.isVirtual
+              )}
             />
           </View>
         )}

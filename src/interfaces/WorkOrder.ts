@@ -142,6 +142,7 @@ export interface CreateWorkOrderRequest {
   visibleReport?: boolean;
   startTime?: Date;
   priority?: WorkOrderPriority;
+  operatorLoggedId?: string;
 }
 export interface AddCommentToWorkOrderRequest {
   comment: string;

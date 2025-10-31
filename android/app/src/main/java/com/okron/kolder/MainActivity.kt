@@ -1,4 +1,4 @@
-package com.okron.app
+package com.okron.kolder
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

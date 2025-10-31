@@ -11,8 +11,8 @@ export default ({ config }) => {
     },
     kolder: {
       name: 'Kolder',
-      android: { package: 'com.okron.clienteB' },
-      logo: './assets/clienteB-logo.png'
+      android: { package: 'com.okron.kolder' },
+      logo: './assets/kolder.png'
     }
   };
 

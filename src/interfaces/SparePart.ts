@@ -61,6 +61,7 @@ export interface WareHouseStockAvailability {
   sparePartId: string;
   sparePartCode: string;
   sparePartName: string;
+  isVirtual: boolean;
   warehouseStock: StockAvailability[];
 }
 

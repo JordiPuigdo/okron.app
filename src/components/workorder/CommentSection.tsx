@@ -1,3 +1,4 @@
+import { CommentRow } from "@components/CommentRow";
 import { FontAwesome5, Ionicons } from "@expo/vector-icons";
 import { useWorkOrders } from "@hooks/useWorkOrders";
 import {
@@ -9,7 +10,7 @@ import { configService } from "@services/configService";
 import { useAuthStore } from "@store/authStore";
 import dayjs from "dayjs";
 import * as ImagePicker from "expo-image-picker";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -25,6 +26,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Swipeable from "react-native-gesture-handler/lib/typescript/components/Swipeable";
 import { theme } from "styles/theme";
 import { CommentFooter } from "./CommentFooter";
 
@@ -37,15 +39,17 @@ interface Props {
     type: WorkOrderCommentType,
     commentObject: WorkOrderComment
   ) => void;
+  onRefresh: () => void;
 }
 
 export const CommentsSection = ({
   comments,
   workOrderId,
   onAddComment,
+  onRefresh,
 }: Props) => {
   const authStore = useAuthStore();
-  const { addCommentToWorkOrder } = useWorkOrders();
+  const { addCommentToWorkOrder, deleteWorkerComment } = useWorkOrders();
   const { isCRM } = configService.getConfigSync();
 
   const [newComment, setNewComment] = useState("");
@@ -53,22 +57,46 @@ export const CommentsSection = ({
   const [commentType, setCommentType] = useState<WorkOrderCommentType>(
     WorkOrderCommentType.Internal
   );
+  const [isEditing, setIsEditing] = useState<string | undefined>(undefined);
 
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
-  // Ajuste de offset teclado
-  useEffect(() => {
-    const show = Keyboard.addListener("keyboardDidShow", () =>
-      setKeyboardVisible(true)
+  const openRowRef = React.useRef<Swipeable | null>(null);
+
+  React.useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      () => {
+        setKeyboardVisible(true);
+      }
     );
-    const hide = Keyboard.addListener("keyboardDidHide", () =>
-      setKeyboardVisible(false)
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        setKeyboardVisible(false);
+      }
     );
+
     return () => {
-      show.remove();
-      hide.remove();
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
     };
   }, []);
+
+  const handleRowOpenStateChange = (ref: Swipeable | null, isOpen: boolean) => {
+    if (isOpen) {
+      // si ya hay una abierta y es distinta, ciérrala
+      if (openRowRef.current && openRowRef.current !== ref) {
+        openRowRef.current.close();
+      }
+      openRowRef.current = ref;
+    } else {
+      // solo limpia si la que se cerró es la que teníamos guardada
+      if (openRowRef.current === ref) {
+        openRowRef.current = null;
+      }
+    }
+  };
 
   const keyboardOffset = Platform.select({
     ios: 100,
@@ -112,6 +140,10 @@ export const CommentsSection = ({
   const [isLoading, setIsLoading] = useState(false);
 
   const handleAdd = async () => {
+    if (isEditing !== undefined) {
+      deleteWorkerComment(workOrderId, isEditing);
+      setIsEditing(undefined);
+    }
     Keyboard.dismiss();
 
     const text = newComment.trim();
@@ -138,19 +170,55 @@ export const CommentsSection = ({
     const response = await addCommentToWorkOrder(req);
     onAddComment(text, attachments, commentType, response);
     setIsLoading(false);
+    onRefresh();
+  };
+  const deleteComment = async (id: string) => {
+    await deleteWorkerComment(workOrderId, id);
+    onRefresh();
   };
 
   const renderCommentItem = ({ item }: { item: WorkOrderComment }) => (
-    <View style={theme.commonStyles.commentItem}>
+    <CommentRow
+      onPressEdit={() => {
+        setIsEditing(item.id);
+        setNewComment(item.comment);
+      }}
+      onPressDelete={() => {
+        Alert.alert("Eliminar", `Segur que vols eliminar el comentari?`, [
+          {
+            text: "Cancel·lar",
+            style: "cancel",
+          },
+          {
+            text: "Eliminar",
+            onPress: () => {
+              deleteComment(item.id);
+            },
+          },
+        ]);
+      }}
+      disabled={false /* pon lógica si necesitas deshabilitar */}
+      onRowOpenStateChange={handleRowOpenStateChange}
+    >
       <View style={theme.commonStyles.commentHeader}>
-        <Text style={theme.commonStyles.commentOperator}>
-          {item.operator.name}
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <FontAwesome5
+            name="user-cog"
+            size={16}
+            color="#374151"
+            style={theme.commonStyles.icon}
+          />
+          <Text style={theme.commonStyles.commentOperator}>
+            {item.operator.name}
+          </Text>
+        </View>
         <Text style={theme.commonStyles.commentDate}>
           {dayjs(item.creationDate).format("DD/MM/YYYY HH:mm")}
         </Text>
       </View>
+
       <Text style={theme.commonStyles.commentText}>{item.comment}</Text>
+
       {item.urls?.map((url, i) => (
         <TouchableOpacity key={i} onPress={() => Linking.openURL(url)}>
           <Text style={theme.commonStyles.linkText}>
@@ -158,14 +226,7 @@ export const CommentsSection = ({
           </Text>
         </TouchableOpacity>
       ))}
-      {/*item.urls?.map((f, i) => (
-        <Image
-          key={i}
-          source={{ uri: (f as any).uri }}
-          style={{ width: 60, height: 60, marginTop: 4, borderRadius: 4 }}
-        />
-      ))*/}
-    </View>
+    </CommentRow>
   );
 
   const filteredComments = isCRM
@@ -197,16 +258,18 @@ export const CommentsSection = ({
           data={filteredComments}
           keyExtractor={(c) => c.id || Math.random().toString()}
           renderItem={renderCommentItem}
+          onScrollBeginDrag={() => {
+            if (openRowRef.current) {
+              openRowRef.current.close();
+              openRowRef.current = null;
+            }
+          }}
           ListEmptyComponent={
             <Text style={theme.commonStyles.emptyText}>
               No hi ha descripció de la reparació per a aquesta ordre de
               treball.
             </Text>
           }
-          contentContainerStyle={[
-            { flexGrow: 1 },
-            comments.length === 0 && theme.commonStyles.emptyContainer,
-          ]}
         />
       )}
 

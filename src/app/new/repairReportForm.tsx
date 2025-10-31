@@ -1,5 +1,6 @@
 import {
   getWorkOrderOrigin,
+  getWorkOrderState,
   getWorkOrderType,
   getWorkOrderTypeByOriginType,
 } from "@components/workorder/utils";
@@ -15,7 +16,6 @@ import {
   WorkOrderType,
 } from "@interfaces/WorkOrder";
 
-import { OperatorType } from "@interfaces/Operator";
 import { configService } from "@services/configService";
 import { useAuthStore } from "@store/authStore";
 import { useRouter } from "expo-router";
@@ -64,10 +64,10 @@ const RepairReportForm = () => {
     customerId: undefined,
     refCustomerId: undefined,
     stateWorkOrder:
-      factoryWorker != null &&
-      factoryWorker.operatorType == OperatorType.Maintenance
-        ? StateWorkOrder.Waiting
+      factoryWorker != null
+        ? getWorkOrderState(factoryWorker.operatorType)
         : StateWorkOrder.Open,
+
     workOrderType:
       factoryWorker != null
         ? getWorkOrderType(factoryWorker.operatorType)

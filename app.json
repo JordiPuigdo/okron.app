@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "OkronApp",
-    "slug": "okronapp",
+    "name": "kolder",
+    "slug": "kolder",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logo.png",
-    "scheme": "okronapp",
+    "icon": "./assets/kolder.png",
+    "scheme": "kolder",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -22,20 +22,19 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.okron.app",
-      "googleServicesFile": "./google-services.json"
+      "package": "com.okron.kolder"
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/logo.png"
+      "favicon": "./assets/kolder.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/logo.png",
+          "image": "./assets/kolder.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"

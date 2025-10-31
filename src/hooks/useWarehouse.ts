@@ -25,6 +25,7 @@ export const useWareHouses = () => {
           sparePartCode: sparePartCode.trim(),
           sparePartName: nameParts.join(" - ").trim(),
           warehouseStock: item.warehouseStock,
+          isVirtual: item.isVirtual,
         };
       });
       setStockAvailability(formattedResponse);

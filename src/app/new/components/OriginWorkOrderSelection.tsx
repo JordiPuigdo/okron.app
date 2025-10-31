@@ -14,10 +14,7 @@ interface Props {
   selectedDefault: OriginWorkOrder | null;
 }
 
-export const OriginWorkOrderSelection = ({
-  setFormData,
-  selectedDefault,
-}: Props) => {
+const OriginWorkOrderSelection = ({ setFormData, selectedDefault }: Props) => {
   const { isCRM } = configService.getConfigSync();
   const [selected, setSelected] = useState<OriginWorkOrder | null>(
     selectedDefault
@@ -88,6 +85,8 @@ export const OriginWorkOrderSelection = ({
     </View>
   );
 };
+
+export default OriginWorkOrderSelection;
 
 const styles = StyleSheet.create({
   container: {

@@ -1,7 +1,7 @@
-import { FontAwesome5, Ionicons } from "@expo/vector-icons";
+import { FontAwesome5 } from "@expo/vector-icons";
 import { WorkOrderCommentType } from "@interfaces/WorkOrder";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { theme } from "styles/theme";
 
 interface Props {
@@ -29,65 +29,6 @@ export const CommentFooter = ({
 
       {/* Separador visual */}
       <View style={styles.separator} />
-
-      {/* Botones CRM */}
-      {isCRM && (
-        <>
-          <TouchableOpacity
-            style={[
-              styles.button,
-              commentType === WorkOrderCommentType.Internal && styles.active,
-            ]}
-            onPress={() => setCommentType(WorkOrderCommentType.Internal)}
-          >
-            <Ionicons
-              name="lock-closed"
-              size={22}
-              color={
-                commentType === WorkOrderCommentType.Internal
-                  ? "#fff"
-                  : inactiveColor
-              }
-            />
-            <Text
-              style={[
-                styles.label,
-                commentType === WorkOrderCommentType.Internal &&
-                  styles.activeLabel,
-              ]}
-            >
-              Intern
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.button,
-              commentType === WorkOrderCommentType.External && styles.active,
-            ]}
-            onPress={() => setCommentType(WorkOrderCommentType.External)}
-          >
-            <Ionicons
-              name="globe-outline"
-              size={22}
-              color={
-                commentType === WorkOrderCommentType.External
-                  ? "#fff"
-                  : inactiveColor
-              }
-            />
-            <Text
-              style={[
-                styles.label,
-                commentType === WorkOrderCommentType.External &&
-                  styles.activeLabel,
-              ]}
-            >
-              Extern
-            </Text>
-          </TouchableOpacity>
-        </>
-      )}
     </View>
   );
 };

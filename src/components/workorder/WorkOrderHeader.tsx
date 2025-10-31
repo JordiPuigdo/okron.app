@@ -37,6 +37,12 @@ export const WorkOrderHeader = ({
         state === StateWorkOrder.Finished || state === StateWorkOrder.Closed
       );
     }
+    if (operatorType === OperatorType.Repairs) {
+      return (
+        state === StateWorkOrder.Finished ||
+        state === StateWorkOrder.NotFinished
+      );
+    }
   }
 
   const isClosed = isClosedWO();

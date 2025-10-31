@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { Button, Card, TextInput } from "react-native-paper";
 import CommentUploadPhoto from "./CommentUploadPhoto";
-import { OriginWorkOrderSelection } from "./OriginWorkOrderSelection";
+import OriginWorkOrderSelection from "./OriginWorkOrderSelection";
 
 const RepairReportFormUI = ({
   formData,

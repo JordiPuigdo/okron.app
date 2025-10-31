@@ -12,8 +12,7 @@ import {
 import { WorkOrderCompletionModal } from "@components/workorder/WorkOrderCompletionModal";
 import { WorkOrderForm } from "@components/workorder/WorkOrderForm";
 import { WorkOrderHeader } from "@components/workorder/WorkOrderHeader";
-import { WorkOrderOperatorTimesComponent } from "@components/WorkOrderOperatorTimes/WorkOrderOperatorTimesComponent";
-import { WorkOrderWorkersComponent } from "@components/workOrderWorkersComponent/WorkOrderWorkersComponent";
+import { WorkersComponent } from "@components/WorkOrderOperatorTimes/WorkersComponent";
 import { useWorkerTimes } from "@hooks/useWorkerTimes";
 import { useWorkOrders } from "@hooks/useWorkOrders";
 import { OperatorType } from "@interfaces/Operator";
@@ -25,7 +24,6 @@ import {
   WorkOrder,
   WorkOrderCommentType,
   WorkOrderInspectionPoint,
-  WorkOrderOperatorTimes,
 } from "@interfaces/WorkOrder";
 import { LoadingScreen } from "@screens/loading/loading";
 import { configService } from "@services/configService";
@@ -134,7 +132,6 @@ export default function WorkOrderDetail() {
     } else if (state === StateWorkOrder.NotFinished && isCRM) {
       setShowNotFinishedModal(true);
     } else {
-      // Sin CRM o estados intermedios, cambio directo
       updateSimpleState(state);
     }
   };
@@ -192,7 +189,7 @@ export default function WorkOrderDetail() {
         },
       ]);
 
-      if (attachments.length > 0 || commentText) {
+      if (attachments.length > 0 || commentText !== undefined) {
         const files = attachments.map((uri) => ({
           uri,
           name: uri.split("/").pop() || "file",
@@ -213,6 +210,8 @@ export default function WorkOrderDetail() {
       if (workOrder.workerSign == null) {
         setSignatureType(SIGNATURE_TYPES.WORKER);
       }
+
+      router.push("/workorders");
     } catch (error) {
       console.error(error);
     } finally {
@@ -260,22 +259,6 @@ export default function WorkOrderDetail() {
   if (isLoading) {
     return <LoadingScreen />;
   }
-
-  function handleRemoveTime(id: string) {
-    setWorkerTimes(workerTimes.filter((t) => t.id !== id));
-  }
-
-  const handleOnCreate = async (created: WorkOrderOperatorTimes) => {
-    setTimeout(async () => {
-      const workOrderRefreshed = await fetchById(workOrder.id);
-      setWorkOrder(workOrderRefreshed);
-      setWorkerTimes(workOrderRefreshed.workOrderOperatorTimes ?? []);
-      setActiveTab("times");
-    }, 500);
-  };
-
-  const handleOnFinalize = async (operatorId: string) => {};
-
   return (
     <SafeAreaView style={theme.commonStyles.mainContainer}>
       <WorkOrderHeader
@@ -358,6 +341,7 @@ export default function WorkOrderDetail() {
                 ],
               }));
             }}
+            onRefresh={() => fetchData(workOrder.id, "comments")}
           />
         )}
         {activeTab === "spareParts" && workOrder && (
@@ -367,23 +351,14 @@ export default function WorkOrderDetail() {
             onRefresh={() => fetchData(workOrder.id, "spareParts")}
           />
         )}
-        {activeTab === "times" &&
-          workOrder &&
-          (isCRM ? (
-            <WorkOrderWorkersComponent
-              workorder={workOrder}
-              setWorkorder={setWorkOrder}
-              onRefresh={() => fetchData(workOrder.id, "times")}
-            />
-          ) : (
-            <WorkOrderOperatorTimesComponent
-              workerTimes={workerTimes}
-              onCreate={(c) => handleOnCreate(c)}
-              onFinalize={handleOnFinalize}
-              workOrderId={workOrder.id}
-              onRemove={(e) => handleRemoveTime(e)}
-            />
-          ))}
+        {activeTab === "times" && workOrder && (
+          <WorkersComponent
+            workorder={workOrder}
+            setWorkorder={setWorkOrder}
+            onRefresh={() => fetchData(workOrder.id, "times")}
+            operatorLoggedId={authStore.factoryWorker?.id ?? ""}
+          />
+        )}
       </View>
 
       <WorkOrderCompletionModal

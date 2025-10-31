@@ -16,6 +16,7 @@ import { WorkOrdersListHeader } from "@components/workorder/WorkOrdersListHeader
 import { useWorkOrders } from "@hooks/useWorkOrders";
 import { OperatorType } from "@interfaces/Operator";
 import { LoadingScreen } from "@screens/loading/loading";
+import { configService } from "@services/configService";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
 import { router, useFocusEffect } from "expo-router";
@@ -31,6 +32,7 @@ export default function workOrders() {
   const [refreshing, setRefreshing] = React.useState(false);
 
   const authStore = useAuthStore();
+  const isCRM = configService.getConfigSync().isCRM;
 
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [filters, setFilters] = useState<{
@@ -254,9 +256,17 @@ export default function workOrders() {
         totalOrders={filteredWorkOrders.length}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        onOpenFilters={() => setFiltersVisible(true)}
+        onOpenFilters={() =>
+          isCRM
+            ? setFilters((prev) => ({
+                ...prev,
+                showFinishedToday: !!!filters.showFinishedToday,
+              }))
+            : setFiltersVisible(true)
+        }
         hasActiveFilters={areFiltersActive(filters)}
         operatorType={authStore.factoryWorker?.operatorType!}
+        isCRM={isCRM}
       />
 
       {

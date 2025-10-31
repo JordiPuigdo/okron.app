@@ -105,6 +105,23 @@ export function getWorkOrderType(operatorType: OperatorType) {
   }
 }
 
+export function getWorkOrderState(operatorType: OperatorType) {
+  switch (operatorType) {
+    case OperatorType.Maintenance:
+      return StateWorkOrder.Waiting;
+    case OperatorType.Quality:
+      return StateWorkOrder.Open;
+    case OperatorType.Production:
+      return StateWorkOrder.Open;
+    case OperatorType.Repairs:
+      return StateWorkOrder.Waiting;
+    case OperatorType.Assembly:
+      return StateWorkOrder.Waiting;
+    default:
+      return StateWorkOrder.Waiting;
+  }
+}
+
 export function getWorkOrderOrigin(operatorType: OperatorType) {
   if (operatorType == undefined) return OriginWorkOrder.Maintenance;
 
@@ -203,6 +220,15 @@ export function getWorkOrderStateToUpdate(
       case StateWorkOrder.PendingToValidate:
         return StateWorkOrder.Finished;
       default:
+        return StateWorkOrder.Finished;
+    }
+  }
+
+  if (operatorType === OperatorType.Repairs) {
+    switch (workorderState) {
+      case StateWorkOrder.Waiting:
+      case StateWorkOrder.OnGoing:
+      case StateWorkOrder.Paused:
         return StateWorkOrder.Finished;
     }
   }

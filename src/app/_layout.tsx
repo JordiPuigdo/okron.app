@@ -3,7 +3,8 @@ import { configService } from "@services/configService";
 import { useAuthStore } from "@store/authStore";
 import { Stack, useRouter } from "expo-router";
 import React, { useEffect } from "react";
-import { StatusBar, StyleSheet } from "react-native";
+import { StatusBar } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler"; // 👈 NUEVO
 import { colors } from "styles/colors";
 
 export default function RootLayout() {
@@ -15,7 +16,7 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar barStyle="light-content" backgroundColor={colors.industrial} />
       <Stack
         screenOptions={({ navigation }) => ({
@@ -95,26 +96,14 @@ export default function RootLayout() {
             title: "Nova Ordre",
           }}
         />
+
+        <Stack.Screen
+          name="operatorTimeManagement/index"
+          options={{
+            title: "Registre de temps",
+          }}
+        />
       </Stack>
-    </>
+    </GestureHandlerRootView>
   );
 }
-
-const styles = StyleSheet.create({
-  iconButton: {
-    paddingVertical: 18, // ⬆️ más aire arriba y abajo (antes 14 o 16)
-    paddingHorizontal: 20,
-    minWidth: 72,
-    minHeight: 72,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 16,
-    backgroundColor: "#ffffff25",
-  },
-  iconLeft: {
-    marginLeft: 16,
-  },
-  iconRight: {
-    marginRight: 16,
-  },
-});

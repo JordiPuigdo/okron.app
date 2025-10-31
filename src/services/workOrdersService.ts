@@ -263,8 +263,7 @@ class WorkOrderService {
   ): Promise<boolean> {
     try {
       const url = `${this.API}workOrder/Sign`;
-      console.log(updateWorkOrderSign);
-      console.log(url);
+
       const response = await fetch(url, {
         method: "PUT",
         headers: {
@@ -307,13 +306,13 @@ class WorkOrderService {
 
   async deleteWorkerComment(workOrderId: string, commentId: string) {
     try {
-      const url = `${this.API}CommentToWorkOrder`;
+      const url = `${this.API}CommentToWorkOrder?workOrderId=${workOrderId}&commentId=${commentId}`;
+
       const response = await fetch(url, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ workOrderId, commentId }),
       });
 
       if (!response.ok) {
