@@ -105,6 +105,7 @@ const AssetSelector = ({
                 style={styles.assetItem}
                 onPress={() => handleSelectAsset(item)}
               >
+                <Text style={styles.assetCode}>{item.path}</Text>
                 <Text style={styles.assetCode}>
                   {item.code} {item.brand ? "- " + item.brand : ""}
                 </Text>

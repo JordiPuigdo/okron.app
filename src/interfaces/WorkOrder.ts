@@ -40,6 +40,7 @@ export interface WorkOrder extends BaseModel {
   customerSign?: string;
   originalWorkOrderCode?: string;
   priority?: WorkOrderPriority;
+  derivedCorrectiveId: string;
 }
 
 export enum WorkOrderType {
@@ -97,7 +98,7 @@ export interface SearchWorkOrderFilters {
   endDateTime?: Date;
   operatorId?: string;
   assetId?: string;
-  stateWorkOrder?: StateWorkOrder;
+  stateWorkOrder?: StateWorkOrder[];
   userType: UserType;
   originWorkOrder: OriginWorkOrder;
 }
@@ -143,6 +144,7 @@ export interface CreateWorkOrderRequest {
   startTime?: Date;
   priority?: WorkOrderPriority;
   operatorLoggedId?: string;
+  creationTime?: Date;
 }
 export interface AddCommentToWorkOrderRequest {
   comment: string;

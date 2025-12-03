@@ -8,19 +8,24 @@ const fetchAssets = async (): Promise<any[]> => {
 
     const elements: any[] = [];
 
-    const addAssetAndChildren = (asset: Asset) => {
+    const addAssetAndChildren = (asset: Asset, parentPath = "") => {
+      const currentPath = parentPath
+        ? `${parentPath} / ${asset.description}`
+        : asset.description;
+
       if (asset.createWorkOrder) {
         elements.push({
           id: asset.id,
           code: asset.code,
           description: asset.description,
           brand: asset.brand,
+          path: currentPath,
         });
       }
 
       if (asset.childs?.length) {
-        asset.childs.forEach((childAsset) => {
-          addAssetAndChildren(childAsset);
+        asset.childs?.forEach((childAsset) => {
+          addAssetAndChildren(childAsset, currentPath);
         });
       }
     };

@@ -52,7 +52,7 @@ export const WorkersComponent: React.FC<Props> = ({
 
   const handleManageOperatorTimes = (operator: Operator) => {
     router.push({
-      pathname: "/operatorTimeManagement",
+      pathname: "/(tabs)/workorders/operatorTimeManagement",
       params: {
         workOrderId: workorder.id,
         operatorId: operator.id,
@@ -75,7 +75,7 @@ export const WorkersComponent: React.FC<Props> = ({
       operatorId: updatedWorkOrder.operator.map((op) => op.id),
       stateWorkOrder: workorder.stateWorkOrder,
       visibleReport: workorder.visibleReport ?? false,
-      startTime: workorder.creationTime,
+      creationTime: workorder.creationTime,
       operatorLoggedId: operatorLoggedId,
       userId: "67dec0ce2464c1a06ae59182",
     } as CreateWorkOrderRequest;
@@ -93,6 +93,7 @@ export const WorkersComponent: React.FC<Props> = ({
       id: workorder.id,
       description: workorder.description,
       code: workorder.code,
+      creationTime: workorder.creationTime,
       workOrderType: workorder.workOrderType,
       operatorId: updatedWorkOrder.operator.map((op) => op.id),
       stateWorkOrder: workorder.stateWorkOrder,

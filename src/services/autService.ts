@@ -3,6 +3,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 export const loginRequest = async (operatorCode: string) => {
   try {
     const url = `${API_URL}operator/${operatorCode}`;
+
     const response = await fetch(url, {
       method: "POST",
       headers: {

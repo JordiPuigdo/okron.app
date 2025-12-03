@@ -6,7 +6,7 @@ export default ({ config }) => {
   const clientConfigs = {
     jpont: {
       name: 'Jpont',
-      android: { package: 'com.okron.app' },
+      android: { package: 'com.okron.jpont' },
       logo: './assets/logo.png'
     },
     kolder: {

@@ -41,6 +41,8 @@ export interface RepairReport {
   userId: string;
   assetId: string;
   priority: WorkOrderPriority;
+  originalWorkOrderId?: string;
+  originalWorkOrderCode?: string;
 }
 
 const RepairReportForm = () => {

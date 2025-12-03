@@ -30,8 +30,17 @@ export const ManualEntryModal: React.FC<Props> = ({
   onSave,
   type,
 }) => {
-  const [startDate, setStartDate] = useState<Date>(new Date());
-  const [endDate, setEndDate] = useState<Date>(new Date());
+  const [startDate, setStartDate] = useState<Date>(() => {
+    const date = new Date();
+    date.setSeconds(0, 0);
+    return date;
+  });
+  const [endDate, setEndDate] = useState<Date>(() => {
+    const date = new Date();
+    date.setSeconds(0, 0);
+    return date;
+  });
+
   const [showPicker, setShowPicker] = useState<{ type: PickerType }>({
     type: null,
   });

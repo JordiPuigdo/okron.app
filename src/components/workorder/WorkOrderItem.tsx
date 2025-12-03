@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { colors } from "styles/colors";
 import { theme } from "styles/theme";
 
 export enum WorkOrderPriority {
@@ -102,9 +103,15 @@ export const WorkOrderItem = ({ workOrder, onPress }: Props) => {
         <Text style={theme.commonStyles.subtitle}>
           {dayjs(workOrder.creationTime).format("DD/MM/YYYY")}
         </Text>
-        <Text style={theme.commonStyles.subtitle}>
-          {workOrder.originalWorkOrderCode ?? ""}
-        </Text>
+        {workOrder.originalWorkOrderCode && (
+          <Text style={theme.commonStyles.subtitle}>
+            {workOrder.originalWorkOrderCode ?? ""}
+          </Text>
+        )}
+        {workOrder.workOrderType == WorkOrderType.Ticket &&
+          workOrder.derivedCorrectiveId && (
+            <Text style={styles.orderCreated}>Ordre de manteniment creada</Text>
+          )}
       </View>
 
       <View style={styles.rightContainer}>
@@ -220,5 +227,16 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 12,
     textTransform: "uppercase",
+  },
+  orderCreated: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: "600",
+    borderRadius: 4,
+    backgroundColor: colors.success,
+    padding: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center",
   },
 });

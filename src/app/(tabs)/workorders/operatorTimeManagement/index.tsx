@@ -96,6 +96,8 @@ export const OperatorTimeManagementScreen: React.FC = () => {
         onCreate={(r) => handleCreate(r)}
         onFinalize={(id) => handleFinalize(id)}
         workOrderId={workOrder.id}
+        workerId={operatorId}
+        onRemove={() => loadWorkOrder()}
       />
     </View>
   );

@@ -12,7 +12,6 @@ export const useLogin = () => {
     setError(null);
     try {
       const factoryWorker = await loginRequest(username);
-      console.log("Logged in factory worker:", factoryWorker);
       if (factoryWorker == null) return false;
       setFactoryWorker(factoryWorker);
       return true;

@@ -7,7 +7,7 @@ import {
   WorkOrderPriority,
   WorkOrderType,
 } from "@interfaces/WorkOrder";
-import { useAuthStore } from "../../stores/authStore";
+import { useAuthStore } from "../../../stores/authStore";
 
 import { getUserType, getWorkOrderOrigin } from "@components/workorder/utils";
 import { WorkOrderFilters } from "@components/workorder/WorkOrderFilters";

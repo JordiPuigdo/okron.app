@@ -21,13 +21,6 @@ const SignModal = ({
   const handleSignature = (sig: string) => {
     handleConfirmSignature(sig);
     sigCanvas.current.clearSignature();
-    // sig es un dataURL base64 de la firma
-    /*setWorkOrder((prev) => ({
-      ...prev,
-      workerSignature: sig,
-    }));*/
-    //setSignature(sig);
-    //handleConfirmSignature();
   };
   const handleEmpty = () => {};
   const getTitle = () => {

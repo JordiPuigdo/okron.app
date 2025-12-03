@@ -210,8 +210,6 @@ export default function WorkOrderDetail() {
       if (workOrder.workerSign == null) {
         setSignatureType(SIGNATURE_TYPES.WORKER);
       }
-
-      router.push("/workorders");
     } catch (error) {
       console.error(error);
     } finally {

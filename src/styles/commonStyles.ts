@@ -397,7 +397,7 @@ export const commonStyles = StyleSheet.create({
     justifyContent: "flex-start",
     alignItems: "stretch",
     backgroundColor: "#fff",
-    paddingBottom: 45,
+    paddingBottom: 0,
   },
   mainContainerWithPadding: {
     flex: 1,
