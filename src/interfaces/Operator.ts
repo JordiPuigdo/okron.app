@@ -5,6 +5,7 @@ interface Operator {
   priceHour: number;
   operatorType: OperatorType;
   active: boolean;
+  annualVacationDays?: number;
 }
 
 export enum OperatorType {

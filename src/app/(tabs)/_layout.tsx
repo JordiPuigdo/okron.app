@@ -63,6 +63,29 @@ export default function TabsLayout() {
           }}
         />
       )}
+
+      {isCRM ? (
+        <Tabs.Screen
+          name="profile/index"
+          options={{
+            title: "Perfil",
+            tabBarIcon: ({ focused, color, size }) => (
+              <Ionicons
+                name={focused ? "person-circle" : "person-circle-outline"}
+                size={size}
+                color={color}
+              />
+            ),
+          }}
+        />
+      ) : (
+        <Tabs.Screen
+          name="profile/index"
+          options={{
+            tabBarButton: () => null,
+          }}
+        />
+      )}
     </Tabs>
   );
 }

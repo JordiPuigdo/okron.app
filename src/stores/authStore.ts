@@ -5,6 +5,7 @@ type FactoryWorker = {
   id: string;
   name: string;
   operatorType: OperatorType;
+  annualVacationDays?: number;
 };
 
 type AuthState = {
